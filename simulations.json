@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Fourier Series",
+    "url": "https://yourusername.github.io/fourier-series",
+    "description": "Visualize wave decomposition into harmonics",
+    "tags": ["analysis", "waves"]
+  },
+  {
+    "title": "Mandelbrot Set",
+    "url": "https://yourusername.github.io/mandelbrot",
+    "description": "Explore the complex plane fractal",
+    "tags": ["fractals", "complex numbers"]
+  },
+  {
+    "title": "Pendulum Simulation",
+    "url": "https://yourusername.github.io/pendulum",
+    "description": "Simple and double pendulum dynamics",
+    "tags": ["mechanics", "chaos"]
+  }
+]
