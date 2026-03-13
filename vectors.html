@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vectors</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #0a0a0a;
+      --panel:  #111111;
+      --border: #222222;
+      --text:   #cccccc;
+      --muted:  #555555;
+      --blue:   #4f9eff;
+      --white:  #ffffff;
+      --green:  #aaffaa;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 48px;
+    }
+
+    .layout {
+      width: 100%;
+      max-width: 960px;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 12px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .mode-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 7px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.05em;
+    }
+    .mode-btn.active { background: #1e1e1e; color: var(--text); }
+
+    .lbl {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .vec-block { display: flex; flex-direction: column; gap: 10px; }
+    .vec-row   { display: flex; align-items: center; gap: 6px; }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot.a { background: var(--white); }
+    .dot.b { background: var(--blue); }
+
+    .coords { display: flex; gap: 4px; flex: 1; }
+    .cw { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .clbl { font-size: 0.6rem; color: var(--muted); text-align: center; }
+
+    input[type="number"] {
+      width: 100%;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.8rem;
+      padding: 5px 4px;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.15s;
+      -moz-appearance: textfield;
+    }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    input:focus { border-color: #444; }
+
+    .ops { display: flex; flex-direction: column; gap: 5px; }
+
+    .op-btn {
+      padding: 7px 10px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+    .op-btn:hover { color: var(--text); border-color: #444; }
+    .op-btn.selected { background: #1e1e1e; color: var(--text); border-color: #444; }
+    .op-btn:disabled { opacity: 0.3; cursor: default; }
+
+    .info {
+      font-size: 0.75rem;
+      line-height: 1.8;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+    .info .v  { color: var(--text); }
+    .info .vw { color: var(--white); }
+    .info .vb { color: var(--blue); }
+    .info .vg { color: var(--green); }
+
+    .canvas-wrap {
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      height: 520px;
+    }
+
+    canvas { display: block; width: 100%; height: 100%; }
+
+    .hint {
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+      font-size: 0.62rem;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .reset-btn {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .reset-btn:hover { color: var(--text); border-color: #444; }
+
+    @media (max-width: 640px) {
+      .layout { grid-template-columns: 1fr; }
+      .canvas-wrap { height: 360px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <div class="panel">
+
+    <div>
+      <div class="lbl">Mode</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="btn2d" onclick="setMode(2)">2D</button>
+        <button class="mode-btn"        id="btn3d" onclick="setMode(3)">3D</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="lbl">Vectors</div>
+      <div class="vec-block">
+        <div class="vec-row">
+          <div class="dot a"></div>
+          <div class="coords">
+            <div class="cw"><div class="clbl">x</div><input type="number" id="ax" value="2"  step="0.5" oninput="update()"></div>
+            <div class="cw"><div class="clbl">y</div><input type="number" id="ay" value="1"  step="0.5" oninput="update()"></div>
+            <div class="cw" id="az-w" style="display:none"><div class="clbl">z</div><input type="number" id="az" value="1" step="0.5" oninput="update()"></div>
+          </div>
+        </div>
+        <div class="vec-row">
+          <div class="dot b"></div>
+          <div class="coords">
+            <div class="cw"><div class="clbl">x</div><input type="number" id="bx" value="-1" step="0.5" oninput="update()"></div>
+            <div class="cw"><div class="clbl">y</div><input type="number" id="by" value="2"  step="0.5" oninput="update()"></div>
+            <div class="cw" id="bz-w" style="display:none"><div class="clbl">z</div><input type="number" id="bz" value="2" step="0.5" oninput="update()"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="lbl">Operation</div>
+      <div class="ops">
+        <button class="op-btn selected" id="op-none"  onclick="setOp('none')">None</button>
+        <button class="op-btn"          id="op-add"   onclick="setOp('add')">Addition</button>
+        <button class="op-btn"          id="op-sub"   onclick="setOp('sub')">Subtraction</button>
+        <button class="op-btn"          id="op-dot"   onclick="setOp('dot')">Dot product</button>
+        <button class="op-btn"          id="op-cross" onclick="setOp('cross')">Cross product</button>
+      </div>
+    </div>
+
+    <div class="info" id="info"></div>
+
+  </div>
+
+  <div class="canvas-wrap" id="cwrap">
+    <button class="reset-btn" onclick="resetView()">reset</button>
+    <span class="hint" id="hint">drag · scroll to zoom</span>
+    <canvas id="c"></canvas>
+  </div>
+
+</div>
+
+<script>
+let mode=2, op='none';
+let cam={theta:Math.PI/6, phi:Math.PI/5, dist:7};
+let pan={x:0,y:0}, zoom2d=60;
+let drag3d=null, drag2d=null;
+
+const COL_A  ='#ffffff';
+const COL_B  ='#4f9eff';
+const COL_SUM='#aaffaa';
+const COL_PRJ='#666666';
+
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+
+function resize(){
+  const w=document.getElementById('cwrap');
+  canvas.width =w.clientWidth *devicePixelRatio;
+  canvas.height=w.clientHeight*devicePixelRatio;
+  canvas.style.width =w.clientWidth +'px';
+  canvas.style.height=w.clientHeight+'px';
+  draw();
+}
+window.addEventListener('resize',resize);
+
+function gv(p){
+  return {
+    x:+(document.getElementById(p+'x').value)||0,
+    y:+(document.getElementById(p+'y').value)||0,
+    z:+(document.getElementById(p+'z')?.value)||0,
+  };
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('btn2d').classList.toggle('active',m===2);
+  document.getElementById('btn3d').classList.toggle('active',m===3);
+  document.getElementById('az-w').style.display=m===3?'':'none';
+  document.getElementById('bz-w').style.display=m===3?'':'none';
+  document.getElementById('hint').textContent=m===3?'drag to rotate · scroll':'drag · scroll to zoom';
+  document.getElementById('op-cross').disabled=m===2;
+  if(m===2&&op==='cross') setOp('none');
+  pan={x:0,y:0}; zoom2d=60;
+  cam={theta:Math.PI/6,phi:Math.PI/5,dist:7};
+  update();
+}
+
+function setOp(o){
+  op=o;
+  ['none','add','sub','dot','cross'].forEach(k=>
+    document.getElementById('op-'+k).classList.toggle('selected',k===o));
+  update();
+}
+
+function resetView(){
+  pan={x:0,y:0}; zoom2d=60;
+  cam={theta:Math.PI/6,phi:Math.PI/5,dist:7};
+  draw();
+}
+
+const vadd =(a,b)=>({x:a.x+b.x,y:a.y+b.y,z:a.z+b.z});
+const vsub =(a,b)=>({x:a.x-b.x,y:a.y-b.y,z:a.z-b.z});
+const vdot =(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
+const vmag =v=>Math.sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
+const vcross=(a,b)=>({x:a.y*b.z-a.z*b.y,y:a.z*b.x-a.x*b.z,z:a.x*b.y-a.y*b.x});
+const vangle=(a,b)=>{const ma=vmag(a),mb=vmag(b);if(!ma||!mb)return 0;return Math.acos(Math.max(-1,Math.min(1,vdot(a,b)/(ma*mb))));};
+const f=n=>(Math.round(n*1000)/1000).toString();
+
+function updateInfo(a,b){
+  const box=document.getElementById('info');
+  const d3=mode===3;
+  let h='';
+  h+=`<span class="vw">▪</span> [${f(a.x)}, ${f(a.y)}${d3?', '+f(a.z):''}]<br>`;
+  h+=`<span class="vb">▪</span> [${f(b.x)}, ${f(b.y)}${d3?', '+f(b.z):''}]<br>`;
+  h+=`|a|=<span class="v">${f(vmag(a))}</span>  |b|=<span class="v">${f(vmag(b))}</span><br>`;
+  if(op==='add'){const s=vadd(a,b);h+=`sum=<span class="vg">[${f(s.x)}, ${f(s.y)}${d3?', '+f(s.z):''}]</span>`;}
+  else if(op==='sub'){const s=vsub(a,b);h+=`diff=<span class="vg">[${f(s.x)}, ${f(s.y)}${d3?', '+f(s.z):''}]</span>`;}
+  else if(op==='dot'){h+=`a·b=<span class="v">${f(vdot(a,b))}</span>  θ=<span class="v">${f(vangle(a,b)*180/Math.PI)}°</span>`;}
+  else if(op==='cross'&&d3){const c=vcross(a,b);h+=`a×b=<span class="vg">[${f(c.x)}, ${f(c.y)}, ${f(c.z)}]</span>`;}
+  else{h+=`θ=<span class="v">${f(vangle(a,b)*180/Math.PI)}°</span>`;}
+  box.innerHTML=h;
+}
+
+// ── 2D ──────────────────────────────────────────────────────────────
+function draw2d(a,b){
+  const W=canvas.width,H=canvas.height;
+  const cx=W/2+pan.x*devicePixelRatio, cy=H/2+pan.y*devicePixelRatio;
+  const sc=zoom2d*devicePixelRatio;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+
+  // Grid
+  const step=sc;
+  const ox=((cx%step)+step)%step, oy=((cy%step)+step)%step;
+  ctx.strokeStyle='#141414';ctx.lineWidth=1;
+  for(let x=ox;x<W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=oy;y<H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // Axes
+  ctx.strokeStyle='#252525';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(W,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx,H);ctx.stroke();
+
+  // Tick numbers
+  ctx.fillStyle='#2e2e2e';ctx.font=`${10*devicePixelRatio}px 'Courier New',monospace`;
+  for(let i=-20;i<=20;i++){
+    if(!i) continue;
+    const px=cx+i*sc; if(px<4||px>W-4) continue;
+    ctx.fillText(i,px-4*devicePixelRatio,cy+13*devicePixelRatio);
+  }
+  for(let i=-20;i<=20;i++){
+    if(!i) continue;
+    const py=cy-i*sc; if(py<4||py>H-4) continue;
+    ctx.fillText(i,cx+5*devicePixelRatio,py+4*devicePixelRatio);
+  }
+
+  function arrow(x1,y1,x2,y2,color,dashed=false){
+    const sx1=cx+x1*sc,sy1=cy-y1*sc;
+    const sx2=cx+x2*sc,sy2=cy-y2*sc;
+    const dx=sx2-sx1,dy=sy2-sy1,len=Math.sqrt(dx*dx+dy*dy);
+    if(len<1) return;
+    const ux=dx/len,uy=dy/len,hs=13*devicePixelRatio;
+    ctx.save();
+    ctx.strokeStyle=color;ctx.fillStyle=color;
+    ctx.lineWidth=2*devicePixelRatio;
+    ctx.globalAlpha=dashed?0.38:1;
+    if(dashed) ctx.setLineDash([6*devicePixelRatio,4*devicePixelRatio]);
+    ctx.beginPath();ctx.moveTo(sx1,sy1);ctx.lineTo(sx2-ux*hs*.8,sy2-uy*hs*.8);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(sx2,sy2);
+    ctx.lineTo(sx2-ux*hs-uy*hs*.38,sy2-uy*hs+ux*hs*.38);
+    ctx.lineTo(sx2-ux*hs+uy*hs*.38,sy2-uy*hs-ux*hs*.38);
+    ctx.closePath();ctx.fill();
+    ctx.restore();
+  }
+
+  if(op==='add'){
+    const s=vadd(a,b);
+    arrow(b.x,b.y,s.x,s.y,COL_A,true);
+    arrow(a.x,a.y,s.x,s.y,COL_B,true);
+    arrow(0,0,s.x,s.y,COL_SUM);
+  } else if(op==='sub'){
+    const s=vsub(a,b);
+    arrow(0,0,s.x,s.y,COL_SUM);
+  } else if(op==='dot'){
+    const ma2=a.x*a.x+a.y*a.y;
+    if(ma2>0){
+      const pr=vdot(a,b)/ma2,px=pr*a.x,py=pr*a.y;
+      arrow(0,0,px,py,COL_PRJ);
+      ctx.save();
+      ctx.setLineDash([4*devicePixelRatio,4*devicePixelRatio]);
+      ctx.strokeStyle=COL_PRJ;ctx.globalAlpha=0.25;ctx.lineWidth=1.2*devicePixelRatio;
+      ctx.beginPath();ctx.moveTo(cx+b.x*sc,cy-b.y*sc);ctx.lineTo(cx+px*sc,cy-py*sc);ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  arrow(0,0,a.x,a.y,COL_A);
+  arrow(0,0,b.x,b.y,COL_B);
+
+  ctx.beginPath();ctx.arc(cx,cy,3*devicePixelRatio,0,Math.PI*2);
+  ctx.fillStyle='#333';ctx.fill();
+}
+
+// ── 3D ──────────────────────────────────────────────────────────────
+function proj3(v){
+  const {theta,phi}=cam;
+  const W=canvas.width,H=canvas.height;
+  const sc=Math.min(W,H)/cam.dist*0.35;
+  const cosT=Math.cos(theta),sinT=Math.sin(theta);
+  const cosP=Math.cos(phi),sinP=Math.sin(phi);
+  const x1=v.x*cosT+v.z*sinT,y1=v.y,z1=-v.x*sinT+v.z*cosT;
+  return {sx:W/2+x1*sc,sy:H/2-(y1*cosP-z1*sinP)*sc};
+}
+
+function draw3d(a,b){
+  const W=canvas.width,H=canvas.height;
+  const O={x:0,y:0,z:0};
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+
+  // XZ Grid
+  ctx.strokeStyle='#141414';ctx.lineWidth=1;
+  for(let i=-5;i<=5;i++){
+    const p1=proj3({x:i,y:0,z:-5}),p2=proj3({x:i,y:0,z:5});
+    const p3=proj3({x:-5,y:0,z:i}),p4=proj3({x:5,y:0,z:i});
+    ctx.beginPath();ctx.moveTo(p1.sx,p1.sy);ctx.lineTo(p2.sx,p2.sy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(p3.sx,p3.sy);ctx.lineTo(p4.sx,p4.sy);ctx.stroke();
+  }
+
+  // Axes
+  function axis(to,lbl){
+    const o=proj3(O),t=proj3(to);
+    ctx.save();ctx.strokeStyle='#252525';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(o.sx,o.sy);ctx.lineTo(t.sx,t.sy);ctx.stroke();
+    ctx.fillStyle='#333';ctx.font=`${10*devicePixelRatio}px 'Courier New',monospace`;
+    ctx.fillText(lbl,t.sx+5,t.sy+4);
+    ctx.restore();
+  }
+  axis({x:5.5,y:0,z:0},'x');
+  axis({x:0,y:5.5,z:0},'y');
+  axis({x:0,y:0,z:5.5},'z');
+
+  function arrow3(from,to,color,dashed=false){
+    const p1=proj3(from),p2=proj3(to);
+    const dx=p2.sx-p1.sx,dy=p2.sy-p1.sy,len=Math.sqrt(dx*dx+dy*dy);
+    if(len<1) return;
+    const ux=dx/len,uy=dy/len,hs=12*devicePixelRatio;
+    ctx.save();
+    ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2*devicePixelRatio;
+    ctx.globalAlpha=dashed?0.35:1;
+    if(dashed) ctx.setLineDash([6*devicePixelRatio,4*devicePixelRatio]);
+    ctx.beginPath();ctx.moveTo(p1.sx,p1.sy);ctx.lineTo(p2.sx-ux*hs*.8,p2.sy-uy*hs*.8);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(p2.sx,p2.sy);
+    ctx.lineTo(p2.sx-ux*hs-uy*hs*.38,p2.sy-uy*hs+ux*hs*.38);
+    ctx.lineTo(p2.sx-ux*hs+uy*hs*.38,p2.sy-uy*hs-ux*hs*.38);
+    ctx.closePath();ctx.fill();
+    ctx.restore();
+  }
+
+  if(op==='add'){
+    const s=vadd(a,b);
+    arrow3(b,s,COL_A,true);arrow3(a,s,COL_B,true);
+    arrow3(O,s,COL_SUM);
+  } else if(op==='sub'){
+    arrow3(O,vsub(a,b),COL_SUM);
+  } else if(op==='cross'){
+    arrow3(O,vcross(a,b),COL_SUM);
+  } else if(op==='dot'){
+    const ma2=a.x*a.x+a.y*a.y+a.z*a.z;
+    if(ma2>0){
+      const pr=vdot(a,b)/ma2,pv={x:pr*a.x,y:pr*a.y,z:pr*a.z};
+      arrow3(O,pv,COL_PRJ);
+      const pp=proj3(pv),bp=proj3(b);
+      ctx.save();ctx.setLineDash([4*devicePixelRatio,4*devicePixelRatio]);
+      ctx.strokeStyle=COL_PRJ;ctx.globalAlpha=0.25;ctx.lineWidth=1.2*devicePixelRatio;
+      ctx.beginPath();ctx.moveTo(bp.sx,bp.sy);ctx.lineTo(pp.sx,pp.sy);ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  arrow3(O,a,COL_A);
+  arrow3(O,b,COL_B);
+
+  const op3=proj3(O);
+  ctx.beginPath();ctx.arc(op3.sx,op3.sy,3*devicePixelRatio,0,Math.PI*2);
+  ctx.fillStyle='#333';ctx.fill();
+}
+
+function update(){draw();}
+function draw(){
+  const a=gv('a'),b=gv('b');
+  if(mode===2) draw2d(a,b); else draw3d(a,b);
+  updateInfo(a,b);
+}
+
+canvas.addEventListener('mousedown',e=>{
+  if(mode===3) drag3d={x:e.clientX,y:e.clientY,theta:cam.theta,phi:cam.phi};
+  else         drag2d={x:e.clientX,y:e.clientY,px:pan.x,py:pan.y};
+});
+window.addEventListener('mousemove',e=>{
+  if(drag3d){cam.theta=drag3d.theta-(e.clientX-drag3d.x)*.008;cam.phi=Math.max(-Math.PI/2+.05,Math.min(Math.PI/2-.05,drag3d.phi+(e.clientY-drag3d.y)*.008));draw();}
+  if(drag2d){pan.x=drag2d.px+(e.clientX-drag2d.x);pan.y=drag2d.py+(e.clientY-drag2d.y);draw();}
+});
+window.addEventListener('mouseup',()=>{drag3d=null;drag2d=null;});
+
+canvas.addEventListener('touchstart',e=>{
+  const t=e.touches[0];
+  if(mode===3) drag3d={x:t.clientX,y:t.clientY,theta:cam.theta,phi:cam.phi};
+  else         drag2d={x:t.clientX,y:t.clientY,px:pan.x,py:pan.y};
+},{passive:true});
+canvas.addEventListener('touchmove',e=>{
+  const t=e.touches[0];
+  if(drag3d){cam.theta=drag3d.theta-(t.clientX-drag3d.x)*.01;cam.phi=Math.max(-Math.PI/2+.05,Math.min(Math.PI/2-.05,drag3d.phi+(t.clientY-drag3d.y)*.01));draw();}
+  if(drag2d){pan.x=drag2d.px+(t.clientX-drag2d.x);pan.y=drag2d.py+(t.clientY-drag2d.y);draw();}
+},{passive:true});
+canvas.addEventListener('touchend',()=>{drag3d=null;drag2d=null;});
+
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  if(mode===2) zoom2d=Math.max(20,Math.min(200,zoom2d-e.deltaY*.1));
+  else         cam.dist=Math.max(3,Math.min(20,cam.dist+e.deltaY*.02));
+  draw();
+},{passive:false});
+
+resize();
+</script>
+</body>
+</html>
