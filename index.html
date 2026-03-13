@@ -38,7 +38,6 @@
     transition: background .3s, color .3s;
   }
 
-  /* HEADER */
   header {
     padding: 2rem 3.5rem;
     display: flex;
@@ -94,7 +93,6 @@
     background: var(--accent);
   }
 
-  /* HERO */
   .hero {
     padding: 3.5rem 3.5rem 2rem;
   }
@@ -115,7 +113,6 @@
   }
   .hero-title em { font-style: italic; color: var(--accent); }
 
-  /* GRID */
   main {
     flex: 1;
     padding: 2.5rem 3.5rem 5rem;
@@ -127,7 +124,6 @@
     gap: 1.2rem;
   }
 
-  /* CARD */
   .card {
     aspect-ratio: 1;
     background: var(--surface);
@@ -142,6 +138,7 @@
     overflow: hidden;
     transition: background .22s, transform .2s, box-shadow .22s;
     box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+    cursor: pointer;
   }
   [data-theme="light"] .card {
     box-shadow: 0 2px 16px rgba(10,22,40,0.10);
@@ -159,7 +156,7 @@
   .card:hover {
     background: var(--surface-h);
     transform: translateY(-4px);
-    box-shadow: 0 8px 32px rgba(79,158,248,0.15);
+    box-shadow: 0 8px 32px rgba(79,158,248,0.18);
   }
   [data-theme="light"] .card:hover {
     box-shadow: 0 8px 28px rgba(26,95,196,0.15);
@@ -174,7 +171,6 @@
     line-height: 1;
     opacity: 0.9;
   }
-
   .card-label {
     font-family: 'Cormorant Garamond', serif;
     font-size: 1.3rem;
@@ -184,7 +180,6 @@
     transition: color .2s;
   }
   .card:hover .card-label { color: var(--accent); }
-
   .card-sub {
     font-size: 0.56rem;
     letter-spacing: 0.1em;
@@ -198,7 +193,6 @@
   }
   .card { animation: rise .42s ease both; }
 
-  /* FOOTER */
   footer {
     padding: 1.5rem 3.5rem;
     display: flex;
@@ -238,6 +232,7 @@
 </footer>
 
 <script>
+  // ── Theme ──
   const html = document.documentElement;
   const btn  = document.getElementById('themeToggle');
   const lbl  = document.getElementById('tlabel');
@@ -245,32 +240,35 @@
   applyTheme(localStorage.getItem('mathion-theme') || 'dark');
   btn.addEventListener('click', () => {
     const n = html.dataset.theme === 'dark' ? 'light' : 'dark';
-    applyTheme(n); localStorage.setItem('mathion-theme', n);
+    applyTheme(n);
+    localStorage.setItem('mathion-theme', n);
   });
   function applyTheme(t) {
     html.dataset.theme = t;
     lbl.textContent = t === 'dark' ? 'Daylight' : 'Dark';
   }
 
-  const DEFAULT = [
-    { title: "Algebra", subtitle: "Equations & Expressions", file: "algebra.html", icon: "x²" }
+  // ── ADD YOUR PAGES HERE ──
+  // To add a new topic: copy one of the objects below, paste it after the last
+  // one (before the closing bracket]), and fill in your details.
+  // "file" must be the exact filename sitting in the same folder as this file.
+  const PAGES = [
+    {
+      title:    "Algebra",
+      subtitle: "Equations & Expressions",
+      file:     "algebra.html",
+      icon:     "x²"
+    }
+    // ↓ paste new entries below this line
   ];
 
-  async function load() {
-    let pages = DEFAULT;
-    try {
-      const r = await fetch('pages.json');
-      if (r.ok) pages = await r.json();
-    } catch(_){}
-    render(pages);
-  }
-
-  function render(pages) {
+  // ── Render ──
+  function render() {
     const grid   = document.getElementById('grid');
     const fcount = document.getElementById('fcount');
     grid.innerHTML = '';
-    fcount.textContent = pages.length + ' topic' + (pages.length !== 1 ? 's' : '');
-    pages.forEach((p, i) => {
+    fcount.textContent = PAGES.length + ' topic' + (PAGES.length !== 1 ? 's' : '');
+    PAGES.forEach((p, i) => {
       const a = document.createElement('a');
       a.className = 'card';
       a.href = p.file || '#';
@@ -285,7 +283,7 @@
     });
   }
 
-  load();
+  render();
 </script>
 </body>
 </html>
