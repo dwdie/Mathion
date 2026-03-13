@@ -1,9 +1,9 @@
 [
   {
-    "id": "algebra",
-    "title": "Algebra",
-    "subtitle": "Equations & Expressions",
+    "id": "vectors",
+    "title": "Vectors",
+    "subtitle": "Simulate 3D and 2D Vectors",
     "file": "vectors.html",
-    "icon": "x²"
+    "icon": "→"
   }
 ]
