@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mathion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"] {
+    --bg:        #060d18;
+    --surface:   #0d1e33;
+    --surface-h: #132843;
+    --text:      #dce8f5;
+    --sub:       #4a6a8a;
+    --accent:    #4f9ef8;
+    --icon-col:  #4f9ef8;
+  }
+  :root[data-theme="light"] {
+    --bg:        #e8f0fb;
+    --surface:   #ffffff;
+    --surface-h: #d6e6fa;
+    --text:      #0a1628;
+    --sub:       #6b8caa;
+    --accent:    #1a5fc4;
+    --icon-col:  #1a5fc4;
+  }
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: background .3s, color .3s;
+  }
+
+  /* HEADER */
+  header {
+    padding: 2rem 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 1.85rem;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+  .logo span { color: var(--accent); font-weight: 500; }
+
+  .toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--sub);
+    transition: color .2s;
+    padding: 0;
+  }
+  .toggle:hover { color: var(--accent); }
+
+  .pill {
+    width: 36px; height: 20px;
+    background: var(--surface-h);
+    border-radius: 999px;
+    position: relative;
+    flex-shrink: 0;
+    transition: background .25s;
+  }
+  .pill::after {
+    content: '';
+    position: absolute;
+    top: 4px; left: 4px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--sub);
+    transition: transform .25s, background .25s;
+  }
+  [data-theme="light"] .pill::after {
+    transform: translateX(16px);
+    background: var(--accent);
+  }
+
+  /* HERO */
+  .hero {
+    padding: 3.5rem 3.5rem 2rem;
+  }
+  .hero-eye {
+    font-size: 0.58rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--sub);
+    margin-bottom: 0.65rem;
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    letter-spacing: -0.04em;
+    line-height: 0.92;
+    color: var(--text);
+  }
+  .hero-title em { font-style: italic; color: var(--accent); }
+
+  /* GRID */
+  main {
+    flex: 1;
+    padding: 2.5rem 3.5rem 5rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+    gap: 1.2rem;
+  }
+
+  /* CARD */
+  .card {
+    aspect-ratio: 1;
+    background: var(--surface);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: var(--text);
+    position: relative;
+    overflow: hidden;
+    transition: background .22s, transform .2s, box-shadow .22s;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+  }
+  [data-theme="light"] .card {
+    box-shadow: 0 2px 16px rgba(10,22,40,0.10);
+  }
+  .card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .28s ease;
+  }
+  .card:hover {
+    background: var(--surface-h);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px rgba(79,158,248,0.15);
+  }
+  [data-theme="light"] .card:hover {
+    box-shadow: 0 8px 28px rgba(26,95,196,0.15);
+  }
+  .card:hover::after { transform: scaleX(1); }
+
+  .card-icon {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.4rem;
+    font-weight: 400;
+    color: var(--icon-col);
+    line-height: 1;
+    opacity: 0.9;
+  }
+
+  .card-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.2rem;
+    transition: color .2s;
+  }
+  .card:hover .card-label { color: var(--accent); }
+
+  .card-sub {
+    font-size: 0.56rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--sub);
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .card { animation: rise .42s ease both; }
+
+  /* FOOTER */
+  footer {
+    padding: 1.5rem 3.5rem;
+    display: flex;
+    justify-content: space-between;
+  }
+  .ft {
+    font-size: 0.56rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sub);
+    opacity: 0.5;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Math<span>ion</span></div>
+  <button class="toggle" id="themeToggle" aria-label="Toggle theme">
+    <div class="pill"></div>
+    <span id="tlabel">Daylight</span>
+  </button>
+</header>
+
+<div class="hero">
+  <div class="hero-eye">Select a topic</div>
+  <div class="hero-title">Topics<em>.</em></div>
+</div>
+
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  <span class="ft">Mathion</span>
+  <span class="ft" id="fcount"></span>
+</footer>
+
+<script>
+  const html = document.documentElement;
+  const btn  = document.getElementById('themeToggle');
+  const lbl  = document.getElementById('tlabel');
+
+  applyTheme(localStorage.getItem('mathion-theme') || 'dark');
+  btn.addEventListener('click', () => {
+    const n = html.dataset.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(n); localStorage.setItem('mathion-theme', n);
+  });
+  function applyTheme(t) {
+    html.dataset.theme = t;
+    lbl.textContent = t === 'dark' ? 'Daylight' : 'Dark';
+  }
+
+  const DEFAULT = [
+    { title: "Algebra", subtitle: "Equations & Expressions", file: "algebra.html", icon: "x²" }
+  ];
+
+  async function load() {
+    let pages = DEFAULT;
+    try {
+      const r = await fetch('pages.json');
+      if (r.ok) pages = await r.json();
+    } catch(_){}
+    render(pages);
+  }
+
+  function render(pages) {
+    const grid   = document.getElementById('grid');
+    const fcount = document.getElementById('fcount');
+    grid.innerHTML = '';
+    fcount.textContent = pages.length + ' topic' + (pages.length !== 1 ? 's' : '');
+    pages.forEach((p, i) => {
+      const a = document.createElement('a');
+      a.className = 'card';
+      a.href = p.file || '#';
+      a.style.animationDelay = (i * 0.07) + 's';
+      a.innerHTML = `
+        <div class="card-icon">${p.icon || '∑'}</div>
+        <div>
+          <div class="card-label">${p.title}</div>
+          <div class="card-sub">${p.subtitle || ''}</div>
+        </div>`;
+      grid.appendChild(a);
+    });
+  }
+
+  load();
+</script>
+</body>
+</html>
