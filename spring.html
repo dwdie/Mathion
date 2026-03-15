@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spring Simulation Lab</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#03060a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:16px}
+#app{background:#080e17;border:1.5px solid #1a3a5c;border-radius:12px;display:flex;width:100%;max-width:960px;height:580px;overflow:hidden}
+#sidebar{width:220px;min-width:220px;background:#05090f;border-right:1.5px solid #1a3a5c;display:flex;flex-direction:column;overflow-y:auto}
+#sidebar::-webkit-scrollbar{width:4px}
+#sidebar::-webkit-scrollbar-thumb{background:#1a3a5c;border-radius:2px}
+.sb-sec{border-bottom:1px solid #0e2035;padding:10px 12px}
+.sb-title{font-size:10px;color:#2e6aaa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:500}
+.row{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.row label{font-size:12px;color:#6699cc;width:74px;flex-shrink:0}
+.row input[type=range]{flex:1;accent-color:#378add;height:3px;cursor:pointer}
+.row .val{font-size:12px;color:#85b7eb;min-width:26px;text-align:right}
+.mode-row{display:flex;gap:5px;margin-bottom:4px}
+.mbtn{flex:1;background:#0a1829;border:1.5px solid #1a3a5c;color:#5588bb;padding:6px 4px;border-radius:6px;font-size:11px;cursor:pointer;text-align:center;transition:all .12s;user-select:none}
+.mbtn.active,.mbtn:hover{background:#0f2545;border-color:#378add;color:#85b7eb}
+.num-row{display:flex;gap:4px}
+.nbtn{flex:1;background:#0a1829;border:1.5px solid #1a3a5c;color:#5588bb;padding:5px 4px;border-radius:5px;font-size:12px;cursor:pointer;text-align:center;transition:all .12s;user-select:none}
+.nbtn.active,.nbtn:hover{background:#0f2545;border-color:#378add;color:#85b7eb}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:10px 12px}
+.stat{background:#0a1829;border:1.5px solid #0e2035;border-radius:6px;padding:6px 8px}
+.stat-l{font-size:10px;color:#2e6aaa;text-transform:uppercase;letter-spacing:.06em}
+.stat-v{font-size:13px;color:#85b7eb;font-weight:500;margin-top:1px}
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#topbar{background:#050a12;border-bottom:1.5px solid #1a3a5c;padding:8px 14px;display:flex;align-items:center;justify-content:space-between}
+#topbar span{font-size:11px;color:#2e6aaa;text-transform:uppercase;letter-spacing:.07em}
+#topbar small{font-size:11px;color:#1a3a5c}
+#cwrap{flex:1;position:relative;overflow:hidden}
+canvas{display:block;cursor:grab}
+canvas:active{cursor:grabbing}
+#hint{background:#050a12;border-top:1px solid #0e2035;padding:5px 14px;font-size:11px;color:#2a5070;text-align:center}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="sb-sec">
+      <div class="sb-title">arrangement</div>
+      <div class="mode-row">
+        <div class="mbtn active" id="m-single" onclick="setMode('single')">single</div>
+        <div class="mbtn" id="m-parallel" onclick="setMode('parallel')">parallel</div>
+        <div class="mbtn" id="m-series" onclick="setMode('series')">series</div>
+      </div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-title">count</div>
+      <div class="num-row" id="count-row"></div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-title">physics</div>
+      <div class="row"><label>stiffness k</label><input type="range" id="k" min="50" max="600" value="200" step="10"><span class="val" id="kv">200</span></div>
+      <div class="row"><label>damping</label><input type="range" id="d" min="0" max="80" value="12" step="1"><span class="val" id="dv">12</span></div>
+      <div class="row"><label>mass</label><input type="range" id="m" min="1" max="20" value="6" step="1"><span class="val" id="mv">6</span></div>
+      <div class="row"><label>gravity</label><input type="range" id="g" min="0" max="30" value="10" step="1"><span class="val" id="gv">10</span></div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-title">spring shape</div>
+      <div class="row"><label>coils</label><input type="range" id="coils" min="6" max="22" value="14" step="1"><span class="val" id="coilsv">14</span></div>
+      <div class="row"><label>amplitude</label><input type="range" id="amp" min="4" max="18" value="9" step="1"><span class="val" id="ampv">9</span></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-l">stretch</div><div class="stat-v" id="s-str">0.0</div></div>
+      <div class="stat"><div class="stat-l">velocity</div><div class="stat-v" id="s-vel">0.0</div></div>
+      <div class="stat"><div class="stat-l">KE</div><div class="stat-v" id="s-ke">0.0</div></div>
+      <div class="stat"><div class="stat-l">PE</div><div class="stat-v" id="s-pe">0.0</div></div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="topbar">
+      <span>spring simulation lab</span>
+      <small>drag weights to interact</small>
+    </div>
+    <div id="cwrap"><canvas id="c"></canvas></div>
+    <div id="hint">drag the weight to stretch — release to simulate</div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W=0, H=0;
+
+function resize(){
+  const wrap=document.getElementById('cwrap');
+  W=wrap.clientWidth; H=wrap.clientHeight;
+  canvas.width=W; canvas.height=H;
+}
+window.addEventListener('resize',()=>{ resize(); initBodies(); });
+
+let mode='single', nSprings=1;
+let K=200, DAMP=12, MASS=6, GRAV=10, NCOILS=14, AMP=9;
+const PALETTE=['#378add','#5dcaa5','#d85a30','#a07fdd'];
+let bodies=[], dragging=-1, dragOffY=0;
+
+function AY(){ return 44; }
+function REST(){ return mode==='series'?Math.floor((H-AY()-60)/Math.max(nSprings,1)*0.55):110; }
+
+function initBodies(){
+  bodies=[];
+  if(!H) return;
+  const ay=AY(), rest=REST();
+  if(mode==='series'){
+    for(let i=0;i<nSprings;i++)
+      bodies.push({y:Math.min(H-30,ay+(i+1)*(rest+MASS*GRAV/K*0.5)),vy:0});
+  } else if(mode==='parallel'){
+    const sy=Math.min(H-30,ay+rest+MASS*GRAV/K);
+    for(let i=0;i<nSprings;i++) bodies.push({y:sy,vy:0});
+  } else {
+    bodies.push({y:Math.min(H-30,ay+rest+MASS*GRAV/K),vy:0});
+  }
+}
+
+function setMode(m){
+  mode=m;
+  ['single','parallel','series'].forEach(x=>document.getElementById('m-'+x).classList.toggle('active',x===m));
+  if(m==='single') nSprings=1;
+  buildCount(); initBodies();
+}
+
+function buildCount(){
+  const row=document.getElementById('count-row');
+  const max=mode==='single'?1:4;
+  if(mode==='single') nSprings=1;
+  row.innerHTML='';
+  for(let i=1;i<=max;i++){
+    const b=document.createElement('div');
+    b.className='nbtn'+(i===nSprings?' active':'');
+    b.textContent=i;
+    const n=i;
+    b.onclick=()=>{ nSprings=n; buildCount(); initBodies(); };
+    row.appendChild(b);
+  }
+}
+buildCount();
+
+function sync(){
+  K=+document.getElementById('k').value; document.getElementById('kv').textContent=K;
+  DAMP=+document.getElementById('d').value; document.getElementById('dv').textContent=DAMP;
+  MASS=+document.getElementById('m').value; document.getElementById('mv').textContent=MASS;
+  GRAV=+document.getElementById('g').value; document.getElementById('gv').textContent=GRAV;
+  NCOILS=+document.getElementById('coils').value; document.getElementById('coilsv').textContent=NCOILS;
+  AMP=+document.getElementById('amp').value; document.getElementById('ampv').textContent=AMP;
+}
+['k','d','m','g','coils','amp'].forEach(id=>document.getElementById(id).addEventListener('input',sync));
+
+function stepPhysics(dt){
+  const ay=AY(), rest=REST(), R=18;
+  if(mode==='series'){
+    for(let i=0;i<bodies.length;i++){
+      if(dragging===i) continue;
+      const prevY=i===0?ay:bodies[i-1].y;
+      const stretch=(bodies[i].y-prevY)-rest;
+      let F=-K*stretch-DAMP*bodies[i].vy+MASS*GRAV;
+      if(i<bodies.length-1) F+=K*((bodies[i+1].y-bodies[i].y)-rest);
+      bodies[i].vy+=F/MASS*dt;
+      bodies[i].y+=bodies[i].vy*dt;
+      const lo=(i===0?ay:bodies[i-1].y)+30;
+      const hi=(i<bodies.length-1?bodies[i+1].y:H-R-5)-30;
+      bodies[i].y=Math.max(lo,Math.min(hi,bodies[i].y));
+    }
+  } else if(mode==='parallel'){
+    if(dragging>=0) return;
+    const b=bodies[0];
+    const stretch=(b.y-ay)-rest;
+    b.vy+=((-K*nSprings*stretch-DAMP*b.vy+MASS*nSprings*GRAV)/(MASS*nSprings))*dt;
+    b.y+=b.vy*dt;
+    b.y=Math.max(ay+30,Math.min(H-R-5,b.y));
+    for(let i=1;i<bodies.length;i++){bodies[i].y=bodies[0].y;bodies[i].vy=bodies[0].vy;}
+  } else {
+    if(dragging===0) return;
+    const b=bodies[0];
+    const stretch=(b.y-ay)-rest;
+    b.vy+=((-K*stretch-DAMP*b.vy+MASS*GRAV)/MASS)*dt;
+    b.y+=b.vy*dt;
+    b.y=Math.max(ay+30,Math.min(H-R-5,b.y));
+  }
+}
+
+function anchorsX(){
+  const n=mode==='series'?1:nSprings;
+  if(n===1) return [W/2];
+  const gap=Math.min(100,(W-80)/(n-1));
+  const start=W/2-gap*(n-1)/2;
+  return Array.from({length:n},(_,i)=>start+i*gap);
+}
+
+function springColor(stretch){
+  const t=Math.max(0,Math.min(1,Math.abs(stretch)/120));
+  return `rgb(${Math.round(55+t*200)},${Math.round(130-t*60)},${Math.round(221-t*100)})`;
+}
+
+function drawCoil(x1,y1,x2,y2,col){
+  const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+  if(len<4) return;
+  const ux=dx/len,uy=dy/len,nx=-uy,ny=ux,total=NCOILS*16;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x1+ux*10,y1+uy*10);
+  for(let i=0;i<=total;i++){
+    const t=i/total,along=10+t*(len-20),off=Math.sin((i/16)*Math.PI*2)*AMP;
+    ctx.lineTo(x1+ux*along+nx*off,y1+uy*along+ny*off);
+  }
+  ctx.lineTo(x2,y2);
+  ctx.strokeStyle=col; ctx.lineWidth=2.2; ctx.lineJoin='round'; ctx.stroke();
+}
+
+function drawAnchor(x,y){
+  ctx.fillStyle='#0d2240'; ctx.strokeStyle='#1e4a7a'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.rect(x-30,y-12,60,12); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='#081828'; ctx.lineWidth=2;
+  for(let i=-22;i<=22;i+=11){ctx.beginPath();ctx.moveTo(x+i,y);ctx.lineTo(x+i-7,y+7);ctx.stroke();}
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y+5);
+  ctx.strokeStyle='#2a6aaa'; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+function drawWeight(x,y,w,h,col,label){
+  ctx.fillStyle=col+'28'; ctx.strokeStyle=col; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(x-w/2,y-h/2,w,h,5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#c0d8f0'; ctx.font='500 11px -apple-system,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(label,x,y);
+}
+
+function drawNode(x,y){
+  ctx.fillStyle='#0d2240'; ctx.strokeStyle='#378add'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(x,y,7,0,Math.PI*2); ctx.fill(); ctx.stroke();
+}
+
+function updateStats(stretch,vy){
+  document.getElementById('s-str').textContent=stretch.toFixed(1);
+  document.getElementById('s-vel').textContent=vy.toFixed(1);
+  document.getElementById('s-ke').textContent=(0.5*MASS*vy*vy).toFixed(1);
+  document.getElementById('s-pe').textContent=(0.5*K*stretch*stretch).toFixed(1);
+}
+
+let last=performance.now();
+function draw(ts){
+  const dt=Math.min((ts-last)/1000,0.04); last=ts;
+  if(!W||!H||!bodies.length){requestAnimationFrame(draw);return;}
+  stepPhysics(dt);
+  ctx.clearRect(0,0,W,H); ctx.fillStyle='#060d16'; ctx.fillRect(0,0,W,H);
+  const ay=AY(),axs=anchorsX(),R=18;
+
+  if(mode==='series'){
+    const ax=axs[0]; drawAnchor(ax,ay);
+    for(let i=0;i<bodies.length;i++){
+      const prevY=i===0?ay:bodies[i-1].y;
+      const topY=i===0?ay:bodies[i-1].y+8;
+      drawCoil(ax,topY,ax,bodies[i].y-R,springColor((bodies[i].y-prevY)-REST()));
+      if(i<bodies.length-1) drawNode(ax,bodies[i].y);
+      else drawWeight(ax,bodies[i].y,46,28,PALETTE[0],MASS+'kg');
+    }
+    updateStats((bodies[0].y-ay)-REST(),bodies[bodies.length-1].vy);
+
+  } else if(mode==='parallel'){
+    const barY=bodies[0].y,barL=axs[0],barR=axs[axs.length-1];
+    axs.forEach(ax=>{ drawAnchor(ax,ay); drawCoil(ax,ay,ax,barY-14,springColor((barY-ay)-REST())); });
+    const bw=Math.max(60,(barR-barL)+60),bh=28,bx=(barL+barR)/2;
+    ctx.fillStyle='#0a2040'; ctx.strokeStyle='#378add'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.roundRect(bx-bw/2,barY-bh/2,bw,bh,5); ctx.fill(); ctx.stroke();
+    axs.forEach(ax=>{ctx.fillStyle='#378add';ctx.beginPath();ctx.arc(ax,barY-bh/2,3,0,Math.PI*2);ctx.fill();});
+    ctx.fillStyle='#c0d8f0'; ctx.font='500 11px -apple-system,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText((MASS*nSprings)+'kg total',bx,barY);
+    updateStats((barY-ay)-REST(),bodies[0].vy);
+
+  } else {
+    const ax=axs[0]; drawAnchor(ax,ay);
+    const stretch=(bodies[0].y-ay)-REST();
+    drawCoil(ax,ay,ax,bodies[0].y-R,springColor(stretch));
+    drawWeight(ax,bodies[0].y,46,28,PALETTE[0],MASS+'kg');
+    updateStats(stretch,bodies[0].vy);
+  }
+  requestAnimationFrame(draw);
+}
+
+function getXY(e){
+  const r=canvas.getBoundingClientRect(),src=e.touches?e.touches[0]:e;
+  return {x:src.clientX-r.left,y:src.clientY-r.top};
+}
+function onDown(e){
+  const {x,y}=getXY(e),axs=anchorsX(),R=18;
+  if(mode==='series'){
+    bodies.forEach((b,i)=>{if(Math.hypot(x-axs[0],y-b.y)<R+10){dragging=i;dragOffY=y-b.y;b.vy=0;e.preventDefault();}});
+  } else if(mode==='parallel'){
+    const barY=bodies[0].y,bx=(axs[0]+axs[axs.length-1])/2;
+    const bw=Math.max(60,(axs[axs.length-1]-axs[0])+60);
+    if(Math.abs(x-bx)<bw/2+6&&Math.abs(y-barY)<20){dragging=0;dragOffY=y-barY;bodies[0].vy=0;e.preventDefault();}
+  } else {
+    if(Math.hypot(x-axs[0],y-bodies[0].y)<R+10){dragging=0;dragOffY=y-bodies[0].y;bodies[0].vy=0;e.preventDefault();}
+  }
+}
+function onMove(e){
+  if(dragging<0) return;
+  const {y}=getXY(e),R=18;
+  const ny=Math.max(AY()+30,Math.min(H-R-5,y-dragOffY));
+  if(mode==='parallel'){bodies.forEach(b=>{b.y=ny;});}
+  else{bodies[dragging].y=ny;}
+  e.preventDefault();
+}
+function onUp(){dragging=-1;}
+
+canvas.addEventListener('mousedown',onDown);
+canvas.addEventListener('mousemove',onMove);
+canvas.addEventListener('mouseup',onUp);
+canvas.addEventListener('mouseleave',onUp);
+canvas.addEventListener('touchstart',onDown,{passive:false});
+canvas.addEventListener('touchmove',onMove,{passive:false});
+canvas.addEventListener('touchend',onUp);
+
+window.addEventListener('load',()=>{
+  resize(); initBodies();
+  requestAnimationFrame(t=>{last=t;requestAnimationFrame(draw);});
+});
+</script>
+</body>
+</html>
