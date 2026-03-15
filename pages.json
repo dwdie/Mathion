@@ -12,5 +12,12 @@
     "file": "pendulum.html",
     "image": "pendulum.png",
     "category": "Mechanics"
+  },
+  {
+    "title": "Spring",
+    "description": "Simulate Springs",
+    "file": "spring.html",
+    "image": "spring.png",
+    "category": "Mechanics"
   }
 ]
