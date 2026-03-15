@@ -1,14 +1,16 @@
 [
   {
     "title": "Vectors",
-    "subtitle": "Simulate vectors",
+    "description": "Explore vector addition, subtraction, and decomposition with interactive arrows. Visualize magnitude and direction in 2D space.",
     "file": "vectors.html",
-    "icon": "V"
+    "image": "vectors.png",
+    "category": "Mathematics"
   },
   {
     "title": "Pendulum",
-    "subtitle": "Simulate pendulums",
+    "description": "Simulate single, double, and chaotic pendulums. Adjust length, mass, gravity and damping in real time.",
     "file": "pendulum.html",
-    "icon": "P"
+    "image": "pendulum.png",
+    "category": "Mechanics"
   }
 ]
