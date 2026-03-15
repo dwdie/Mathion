@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pendulum Simulation</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #060c18;
+    --surface:  #0d1a2e;
+    --panel:    #0f2040;
+    --border:   #1e3a5f;
+    --border2:  #2a5080;
+    --accent:   #4da6ff;
+    --accent2:  #a0d4ff;
+    --blue-dim: #1e4d80;
+    --white:    #f0f6ff;
+    --text:     #c8dff5;
+    --muted:    #5a80a8;
+    --muted2:   #7aa0c0;
+    --green:    #4cffb0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 290px;
+    min-width: 290px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .panel {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border2);
+  }
+
+  /* Mode buttons */
+  .mode-bar { display: flex; gap: 0; }
+  .mode-btn {
+    flex: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    padding: 9px 6px;
+    background: transparent;
+    color: var(--muted2);
+    transition: all 0.18s;
+  }
+  .mode-btn:first-child { border-radius: 3px 0 0 3px; }
+  .mode-btn:last-child  { border-radius: 0 3px 3px 0; }
+  .mode-btn + .mode-btn { border-left: none; }
+  .mode-btn:hover { background: var(--blue-dim); color: var(--accent2); }
+  .mode-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Sliders */
+  .ctrl { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
+  .ctrl:last-child { margin-bottom: 0; }
+
+  .ctrl-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.68rem;
+    color: var(--text);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  .ctrl-val {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 72px;
+    text-align: right;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--border2);
+    outline: none;
+    margin: 8px 0 2px;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--accent), 0 0 8px rgba(77,166,255,0.4);
+    transition: transform 0.12s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.25); }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 8px; }
+
+  button.btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    padding: 10px 14px;
+    background: var(--panel);
+    color: var(--text);
+    transition: all 0.18s;
+    flex: 1;
+    border-radius: 3px;
+  }
+  button.btn:hover { background: var(--blue-dim); border-color: var(--accent); color: var(--accent2); }
+  button.btn.primary { border-color: var(--accent); color: var(--accent); }
+  button.btn.primary:hover { background: var(--accent); color: var(--bg); }
+  button.btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  /* Readouts */
+  .readout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .rd {
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    padding: 9px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .rd-key {
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    font-weight: 500;
+  }
+  .rd-val {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: 0.03em;
+  }
+  .rd.wide { grid-column: 1 / -1; }
+
+  /* Toggles */
+  .toggle-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .tog-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .tog-row:hover { border-color: var(--border2); }
+  .tog-row.active { border-color: var(--accent); }
+  .tog-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    font-weight: 500;
+  }
+  .tog-row.active .tog-label { color: var(--accent2); }
+
+  .pill {
+    width: 28px;
+    height: 14px;
+    background: var(--border2);
+    border-radius: 7px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .pill::after {
+    content: '';
+    position: absolute;
+    left: 2px; top: 2px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: all 0.2s;
+  }
+  .tog-row.active .pill { background: var(--accent); }
+  .tog-row.active .pill::after { left: 16px; background: var(--bg); }
+
+  /* Canvas area */
+  .canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  canvas { display: block; flex: 1; }
+
+  /* Bottom info bar */
+  .info-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .inf {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+  }
+  .inf-key {
+    color: var(--muted2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .inf-val {
+    color: var(--white);
+    font-weight: 600;
+    font-size: 0.72rem;
+  }
+  .inf-sep { color: var(--border2); }
+  .inf-hint {
+    margin-left: auto;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: blink 2.2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  /* Arm count stepper */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 8px;
+  }
+  .stepper button {
+    font-family: 'IBM Plex Mono', monospace;
+    width: 36px; height: 36px;
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    color: var(--accent2);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .stepper button:first-child { border-radius: 3px 0 0 3px; }
+  .stepper button:last-child  { border-radius: 0 3px 3px 0; border-left: none; }
+  .stepper button:hover { background: var(--blue-dim); color: var(--white); }
+  .stepper .step-val {
+    flex: 1;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--white);
+    background: var(--bg);
+    border-top: 1px solid var(--border2);
+    border-bottom: 1px solid var(--border2);
+    border-left: none; border-right: none;
+    height: 36px;
+    line-height: 36px;
+    letter-spacing: 0.05em;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .stepper-hint {
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+
+  <!-- Mode -->
+  <div class="panel">
+    <div class="section-label">Mode</div>
+    <div class="mode-bar">
+      <button class="mode-btn active" id="btn-single" onclick="setMode('single')">Single</button>
+      <button class="mode-btn" id="btn-multi"  onclick="setMode('multi')">Multi</button>
+      <button class="mode-btn" id="btn-chaos"  onclick="setMode('chaos')">Chaos</button>
+    </div>
+  </div>
+
+  <!-- Arms (multi mode) -->
+  <div class="panel" id="arms-panel" style="display:none">
+    <div class="section-label">Pendulum Arms</div>
+    <div style="font-size:0.68rem;color:var(--text);font-weight:500;margin-bottom:4px;">Number of linked arms</div>
+    <div class="stepper">
+      <button onclick="changeArms(-1)">−</button>
+      <div class="step-val" id="arm-display">2</div>
+      <button onclick="changeArms(+1)">+</button>
+    </div>
+    <div class="stepper-hint">Range: 1 – 10 arms per chain</div>
+  </div>
+
+  <!-- Copies (chaos mode) -->
+  <div class="panel" id="chaos-panel" style="display:none">
+    <div class="section-label">Chaos Copies</div>
+    <div class="ctrl">
+      <div class="ctrl-head">Number of copies <span class="ctrl-val" id="lbl-copies">8</span></div>
+      <input type="range" id="sl-copies" min="2" max="20" value="8" oninput="updateCopies(this.value)">
+    </div>
+  </div>
+
+  <!-- Physics -->
+  <div class="panel">
+    <div class="section-label">Physics</div>
+    <div class="ctrl">
+      <div class="ctrl-head">Arm Length <span class="ctrl-val" id="lbl-length">1.20 m</span></div>
+      <input type="range" id="sl-length" min="40" max="200" value="120" oninput="updateParam('length',this.value)">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-head">Bob Mass <span class="ctrl-val" id="lbl-mass">1.00 kg</span></div>
+      <input type="range" id="sl-mass" min="5" max="40" value="18" oninput="updateParam('mass',this.value)">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-head">Gravity <span class="ctrl-val" id="lbl-gravity">9.81 m/s²</span></div>
+      <input type="range" id="sl-gravity" min="100" max="2500" value="981" oninput="updateParam('gravity',this.value)">
+    </div>
+    <div class="ctrl">
+      <div class="ctrl-head">Damping <span class="ctrl-val" id="lbl-damping">0.005</span></div>
+      <input type="range" id="sl-damping" min="0" max="150" value="5" oninput="updateParam('damping',this.value)">
+    </div>
+  </div>
+
+  <!-- Display -->
+  <div class="panel">
+    <div class="section-label">Display</div>
+    <div class="toggle-grid">
+      <div class="tog-row active" id="tog-trail"  onclick="toggleFeat('trail')">
+        <span class="tog-label">Trail</span><div class="pill"></div>
+      </div>
+      <div class="tog-row active" id="tog-energy" onclick="toggleFeat('energy')">
+        <span class="tog-label">Energy</span><div class="pill"></div>
+      </div>
+      <div class="tog-row" id="tog-vector" onclick="toggleFeat('vector')">
+        <span class="tog-label">Vector</span><div class="pill"></div>
+      </div>
+      <div class="tog-row" id="tog-grid" onclick="toggleFeat('grid')">
+        <span class="tog-label">Grid</span><div class="pill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="panel">
+    <div class="section-label">Controls</div>
+    <div class="btn-row" style="margin-bottom:8px">
+      <button class="btn primary" id="btn-play" onclick="togglePlay()">Pause</button>
+      <button class="btn" onclick="resetSim()">Reset</button>
+    </div>
+    <button class="btn" style="width:100%" onclick="randomize()">Randomize</button>
+  </div>
+
+  <!-- Readouts -->
+  <div class="panel">
+    <div class="section-label">Measurements</div>
+    <div class="readout-grid">
+      <div class="rd">
+        <div class="rd-key">Period T</div>
+        <div class="rd-val" id="rd-period">—</div>
+      </div>
+      <div class="rd">
+        <div class="rd-key">Angle θ₁</div>
+        <div class="rd-val" id="rd-angle">—</div>
+      </div>
+      <div class="rd">
+        <div class="rd-key">Velocity</div>
+        <div class="rd-val" id="rd-vel">—</div>
+      </div>
+      <div class="rd">
+        <div class="rd-key">ω (rad/s)</div>
+        <div class="rd-val" id="rd-omega">—</div>
+      </div>
+      <div class="rd">
+        <div class="rd-key">KE (J)</div>
+        <div class="rd-val" id="rd-ke">—</div>
+      </div>
+      <div class="rd">
+        <div class="rd-key">PE (J)</div>
+        <div class="rd-val" id="rd-pe">—</div>
+      </div>
+      <div class="rd wide">
+        <div class="rd-key">Total Energy</div>
+        <div class="rd-val" id="rd-energy">—</div>
+      </div>
+    </div>
+  </div>
+
+</aside>
+
+<div class="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div class="info-bar">
+    <div class="status-dot"></div>
+    <div class="inf"><span class="inf-key">T</span><span class="inf-val" id="inf-T">—</span></div>
+    <span class="inf-sep">·</span>
+    <div class="inf"><span class="inf-key">θ</span><span class="inf-val" id="inf-theta">—</span></div>
+    <span class="inf-sep">·</span>
+    <div class="inf"><span class="inf-key">ω</span><span class="inf-val" id="inf-omega">—</span></div>
+    <span class="inf-sep">·</span>
+    <div class="inf"><span class="inf-key">E</span><span class="inf-val" id="inf-E">—</span></div>
+    <div class="inf-hint">Drag the bob to change starting angle</div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+let mode    = 'single';
+let running = true;
+let numArms = 2;
+let copyCnt = 8;
+let lastTime = null;
+const MAX_TRAIL = 450;
+
+let features = { trail: true, energy: true, vector: false, grid: false };
+let params   = { length: 120, mass: 18, gravity: 981, damping: 5 };
+
+// Single
+let theta1 = Math.PI / 3, omega1 = 0, trailS = [];
+
+// Multi (N-link)
+let angles = [], omegas = [], trailM = [];
+
+// Chaos (array of double pendulums)
+let chaosBobs = [];
+
+// ── Resize ──────────────────────────────────────────────
+function resize() {
+  const infoH = document.querySelector('.info-bar').offsetHeight || 44;
+  canvas.width  = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight - infoH;
+}
+window.addEventListener('resize', () => { resize(); clearTrails(); });
+
+function clearTrails() { trailS = []; trailM = []; chaosBobs.forEach(p => p.trail = []); }
+
+// ── Geometry ─────────────────────────────────────────────
+function pivot() { return { x: canvas.width / 2, y: canvas.height * 0.18 }; }
+
+function armLen() {
+  const avail = Math.min(canvas.width, canvas.height) * 0.70;
+  if (mode === 'single') return Math.min((params.length / 200) * avail, avail * 0.82);
+  const n = mode === 'multi' ? numArms : 2;
+  return Math.min((params.length / 200) * avail / n, avail / n * 0.9);
+}
+
+function bobR(scale = 1) { return Math.max(7, Math.sqrt(params.mass) * 2.2) * scale; }
+
+// ── Color palette ────────────────────────────────────────
+const PAL = ['#4da6ff','#a0d4ff','#66b8ff','#80c8ff','#1a8cff',
+             '#b8e4ff','#2090ee','#55aaee','#c8ecff','#0e70cc'];
+
+// ── Physics: Single ──────────────────────────────────────
+function stepSingle(dt) {
+  const g = params.gravity / 100, L = params.length / 100, b = params.damping / 1000;
+  const a = -(g / L) * Math.sin(theta1) - b * omega1;
+  omega1 += a * dt; theta1 += omega1 * dt;
+}
+
+// ── Physics: N-link ──────────────────────────────────────
+function stepMulti(dt) {
+  const g = params.gravity / 100;
+  const L = (params.length / 100) / numArms;
+  const b = params.damping / 1000;
+  const N = numArms;
+  const acc = new Array(N);
+  for (let i = 0; i < N; i++) {
+    let torque = -(g / L) * Math.sin(angles[i]);
+    if (i < N - 1) torque += 0.35 * (g / L) * Math.sin(angles[i+1] - angles[i]);
+    if (i > 0)     torque -= 0.35 * (g / L) * Math.sin(angles[i] - angles[i-1]);
+    acc[i] = torque - b * omegas[i];
+  }
+  for (let i = 0; i < N; i++) { omegas[i] += acc[i] * dt; angles[i] += omegas[i] * dt; }
+}
+
+// ── Physics: Chaos (exact double pendulum) ───────────────
+function stepDouble(p, dt) {
+  const g = params.gravity / 100, L = (params.length / 100) / 2, b = params.damping / 1000;
+  const d = p.th1 - p.th2, D = 2 + 1 - Math.cos(2 * d);
+  const a1 = (-g*3*Math.sin(p.th1) - g*Math.sin(p.th1-2*p.th2)
+    - 2*Math.sin(d)*(p.om2*p.om2*L + p.om1*p.om1*L*Math.cos(d))) / (L*D);
+  const a2 = (2*Math.sin(d)*(p.om1*p.om1*L*2 + g*2*Math.cos(p.th1)
+    + p.om2*p.om2*L*Math.cos(d))) / (L*D);
+  p.om1 += (a1 - b*p.om1)*dt; p.om2 += (a2 - b*p.om2)*dt;
+  p.th1 += p.om1*dt; p.th2 += p.om2*dt;
+}
+
+// ── N-link positions ─────────────────────────────────────
+function chainPos(angArr, L) {
+  const pv = pivot(), pts = [pv];
+  for (let i = 0; i < angArr.length; i++) {
+    const pr = pts[pts.length - 1];
+    pts.push({ x: pr.x + L * Math.sin(angArr[i]), y: pr.y + L * Math.cos(angArr[i]) });
+  }
+  return pts;
+}
+
+// ── Draw helpers ─────────────────────────────────────────
+function drawGrid() {
+  ctx.strokeStyle = 'rgba(77,166,255,0.055)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < canvas.width; x += 48) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += 48) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+}
+
+function drawMount(pv) {
+  ctx.fillStyle = '#081428';
+  ctx.fillRect(pv.x - 50, pv.y - 15, 100, 15);
+  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 1;
+  ctx.strokeRect(pv.x - 50, pv.y - 15, 100, 15);
+  ctx.beginPath(); ctx.arc(pv.x, pv.y, 6, 0, Math.PI*2);
+  ctx.fillStyle = '#1a3a60'; ctx.fill();
+  ctx.strokeStyle = '#4da6ff'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(pv.x, pv.y, 3, 0, Math.PI*2);
+  ctx.fillStyle = '#4da6ff'; ctx.fill();
+}
+
+function drawRod(x1, y1, x2, y2, a=1) {
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+  ctx.strokeStyle = `rgba(110,180,255,${a * 0.72})`; ctx.lineWidth = 2; ctx.stroke();
+}
+
+function drawBob(x, y, r, color, a = 1) {
+  ctx.globalAlpha = a;
+  // Glow halo
+  const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 2.4);
+  glow.addColorStop(0, color + '44'); glow.addColorStop(1, 'transparent');
+  ctx.beginPath(); ctx.arc(x, y, r*2.4, 0, Math.PI*2);
+  ctx.fillStyle = glow; ctx.fill();
+  // Drop shadow
+  ctx.beginPath(); ctx.arc(x+2, y+3, r, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fill();
+  // Gradient sphere
+  const gr = ctx.createRadialGradient(x - r*.32, y - r*.38, 1, x, y, r);
+  gr.addColorStop(0, '#e8f5ff');
+  gr.addColorStop(0.3, color);
+  gr.addColorStop(1, darken(color, 65));
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fillStyle = gr; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function darken(hex, amt) {
+  const r = Math.max(0, parseInt(hex.slice(1,3),16) - amt);
+  const g = Math.max(0, parseInt(hex.slice(3,5),16) - amt);
+  const b = Math.max(0, parseInt(hex.slice(5,7),16) - amt);
+  return `rgb(${r},${g},${b})`;
+}
+
+function drawTrail(pts, color) {
+  if (pts.length < 2) return;
+  const r = parseInt(color.slice(1,3),16), g = parseInt(color.slice(3,5),16), b = parseInt(color.slice(5,7),16);
+  for (let i = 1; i < pts.length; i++) {
+    const t = i / pts.length;
+    ctx.beginPath(); ctx.moveTo(pts[i-1].x, pts[i-1].y); ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.strokeStyle = `rgba(${r},${g},${b},${t*0.55})`; ctx.lineWidth = t*2.5; ctx.stroke();
+  }
+}
+
+function drawEnergyBar(ke, pe) {
+  const total = ke + pe;
+  const bx = 18, by = canvas.height - 58, bw = 18, bh = 100, pad = 7;
+  // Background box
+  ctx.fillStyle = 'rgba(9,20,44,0.88)';
+  rrect(bx-pad, by-28, 2*bw+14+2*pad, bh+46, 5); ctx.fill();
+  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 1; ctx.stroke();
+  // Tracks
+  ctx.fillStyle = '#111f38'; ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = '#111f38'; ctx.fillRect(bx+bw+10, by, bw, bh);
+  // Bars
+  const keH = total > 0 ? (ke/total)*bh : 0, peH = total > 0 ? (pe/total)*bh : 0;
+  ctx.fillStyle = '#4da6ff'; ctx.fillRect(bx, by+bh-keH, bw, keH);
+  ctx.fillStyle = '#a0d4ff'; ctx.fillRect(bx+bw+10, by+bh-peH, bw, peH);
+  // Labels
+  ctx.font = '600 9px IBM Plex Mono'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#7aa0c0'; ctx.fillText('KE', bx+bw/2, by+bh+14);
+  ctx.fillStyle = '#7aa0c0'; ctx.fillText('PE', bx+bw+10+bw/2, by+bh+14);
+  ctx.fillStyle = '#4da6ff'; ctx.fillText('KE', bx+bw/2, by-14);
+  ctx.fillStyle = '#a0d4ff'; ctx.fillText('PE', bx+bw+10+bw/2, by-14);
+}
+
+function rrect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
+  ctx.arcTo(x+w, y, x+w, y+r, r); ctx.lineTo(x+w, y+h-r);
+  ctx.arcTo(x+w, y+h, x+w-r, y+h, r); ctx.lineTo(x+r, y+h);
+  ctx.arcTo(x, y+h, x, y+h-r, r); ctx.lineTo(x, y+r);
+  ctx.arcTo(x, y, x+r, y, r); ctx.closePath();
+}
+
+function drawVec(x, y, omega, theta) {
+  if (!features.vector) return;
+  const sc = 22, vx = Math.cos(theta)*omega*sc, vy = -Math.sin(theta)*omega*sc;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x+vx, y+vy);
+  ctx.strokeStyle = 'rgba(255,110,110,0.72)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x+vx, y+vy, 3.5, 0, Math.PI*2);
+  ctx.fillStyle = '#ff8888'; ctx.fill();
+}
+
+// ── Draw Single ──────────────────────────────────────────
+function drawSingle() {
+  const pv = pivot(), L = armLen(), r = bobR();
+  const bx = pv.x + L*Math.sin(theta1), by = pv.y + L*Math.cos(theta1);
+  if (features.trail) drawTrail(trailS, '#4da6ff');
+  drawRod(pv.x, pv.y, bx, by);
+  drawMount(pv);
+  drawBob(bx, by, r, '#4da6ff');
+  drawVec(bx, by, omega1, theta1 + Math.PI/2);
+
+  const g=params.gravity/100, Lm=params.length/100, m=params.mass/10;
+  const v=omega1*Lm, h=Lm*(1-Math.cos(theta1)), ke=.5*m*v*v, pe=m*g*h;
+  const T = 2*Math.PI*Math.sqrt(Lm/g);
+  if (features.energy) drawEnergyBar(ke, pe);
+  updateUI(T, theta1, v, omega1, ke, pe);
+}
+
+// ── Draw Multi ───────────────────────────────────────────
+function drawMulti() {
+  const L = armLen(), pts = chainPos(angles, L);
+  if (features.trail) drawTrail(trailM, '#66b8ff');
+  for (let i = 0; i < pts.length-1; i++) drawRod(pts[i].x, pts[i].y, pts[i+1].x, pts[i+1].y);
+  drawMount(pts[0]);
+  for (let i = 1; i < pts.length; i++) {
+    const frac = i/(pts.length-1);
+    drawBob(pts[i].x, pts[i].y, bobR(0.65 + 0.35*frac), PAL[i % PAL.length]);
+  }
+  const g=params.gravity/100, Lm=(params.length/100)/numArms, m=params.mass/10;
+  const T=2*Math.PI*Math.sqrt(Lm/g), v=omegas[0]*Lm, h=Lm*(1-Math.cos(angles[0])), ke=.5*m*v*v, pe=m*g*h;
+  if (features.energy) drawEnergyBar(ke, pe);
+  updateUI(T, angles[0], v, omegas[0], ke, pe);
+}
+
+// ── Draw Chaos ───────────────────────────────────────────
+function drawChaos() {
+  const pv=pivot(), L=armLen()*0.85, r=bobR(0.52);
+  for (let i=0;i<chaosBobs.length;i++) if(features.trail) drawTrail(chaosBobs[i].trail, PAL[i%PAL.length]);
+  for (let i=0;i<chaosBobs.length;i++) {
+    const p=chaosBobs[i];
+    const x1=pv.x+L*Math.sin(p.th1), y1=pv.y+L*Math.cos(p.th1);
+    const x2=x1+L*Math.sin(p.th2),   y2=y1+L*Math.cos(p.th2);
+    drawRod(pv.x,pv.y,x1,y1,0.35); drawRod(x1,y1,x2,y2,0.35);
+    drawBob(x2,y2,r,PAL[i%PAL.length],0.88);
+  }
+  drawMount(pv);
+  updateUI('—', chaosBobs[0]?.th1??0, 0, 0, 0, 0);
+}
+
+function updateUI(T, theta, v, om, ke, pe) {
+  const Tf = typeof T==='number' ? T.toFixed(3)+' s' : '—';
+  document.getElementById('rd-period').textContent = Tf;
+  document.getElementById('rd-angle').textContent  = (theta*180/Math.PI).toFixed(1)+'°';
+  document.getElementById('rd-vel').textContent    = typeof v==='number'?v.toFixed(3)+' m/s':'—';
+  document.getElementById('rd-omega').textContent  = typeof om==='number'?om.toFixed(3):'—';
+  document.getElementById('rd-ke').textContent     = typeof ke==='number'?ke.toFixed(3):'—';
+  document.getElementById('rd-pe').textContent     = typeof pe==='number'?pe.toFixed(3):'—';
+  document.getElementById('rd-energy').textContent = typeof ke==='number'?(ke+pe).toFixed(4)+' J':'—';
+  document.getElementById('inf-T').textContent     = Tf;
+  document.getElementById('inf-theta').textContent = (theta*180/Math.PI).toFixed(1)+'°';
+  document.getElementById('inf-omega').textContent = typeof om==='number'?om.toFixed(3)+' r/s':'—';
+  document.getElementById('inf-E').textContent     = typeof ke==='number'?(ke+pe).toFixed(3)+' J':'—';
+}
+
+// ── Render loop ──────────────────────────────────────────
+function render(ts) {
+  if (!lastTime) lastTime = ts;
+  const rawDt = Math.min((ts-lastTime)/1000, 0.033);
+  lastTime = ts;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const bg = ctx.createRadialGradient(canvas.width/2,canvas.height*.45,0,canvas.width/2,canvas.height/2,canvas.width*.76);
+  bg.addColorStop(0,'#0d1a2e'); bg.addColorStop(1,'#060c18');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  if (features.grid) drawGrid();
+
+  if (running) {
+    const STEPS=10, dt=rawDt/STEPS;
+    for (let s=0;s<STEPS;s++) {
+      if (mode==='single') stepSingle(dt);
+      else if (mode==='multi') stepMulti(dt);
+      else chaosBobs.forEach(p=>stepDouble(p,dt));
+    }
+    // Accumulate trails
+    if (mode==='single') {
+      const pv=pivot(),L=armLen();
+      trailS.push({x:pv.x+L*Math.sin(theta1),y:pv.y+L*Math.cos(theta1)});
+      if(trailS.length>MAX_TRAIL) trailS.shift();
+    }
+    if (mode==='multi') {
+      const pts=chainPos(angles,armLen()), last=pts[pts.length-1];
+      trailM.push({x:last.x,y:last.y});
+      if(trailM.length>MAX_TRAIL) trailM.shift();
+    }
+    if (mode==='chaos') {
+      const pv=pivot(),L=armLen()*0.85;
+      for (const p of chaosBobs) {
+        const x1=pv.x+L*Math.sin(p.th1),y1=pv.y+L*Math.cos(p.th1);
+        p.trail.push({x:x1+L*Math.sin(p.th2),y:y1+L*Math.cos(p.th2)});
+        if(p.trail.length>MAX_TRAIL) p.trail.shift();
+      }
+    }
+  }
+
+  if (mode==='single') drawSingle();
+  else if (mode==='multi') drawMulti();
+  else drawChaos();
+
+  requestAnimationFrame(render);
+}
+
+// ── Init ─────────────────────────────────────────────────
+function initMulti() {
+  angles=[]; omegas=[];
+  for(let i=0;i<numArms;i++){angles.push(Math.PI/4 - i*.08);omegas.push(0);}
+}
+function initChaos() {
+  chaosBobs=[];
+  for(let i=0;i<copyCnt;i++){
+    const off=(i/copyCnt)*0.004;
+    chaosBobs.push({th1:Math.PI/2+off,th2:Math.PI/2+off,om1:0,om2:0,trail:[]});
+  }
+}
+function resetSim() {
+  clearTrails(); theta1=Math.PI/3; omega1=0;
+  initMulti(); initChaos();
+}
+
+// ── Controls ─────────────────────────────────────────────
+function setMode(m) {
+  mode=m;
+  ['single','multi','chaos'].forEach(id=>document.getElementById('btn-'+id).classList.toggle('active',id===m));
+  document.getElementById('arms-panel').style.display  = m==='multi' ?'':'none';
+  document.getElementById('chaos-panel').style.display = m==='chaos' ?'':'none';
+  resetSim();
+}
+
+function changeArms(d) {
+  numArms = Math.max(1,Math.min(10,numArms+d));
+  document.getElementById('arm-display').textContent = numArms;
+  initMulti(); trailM=[];
+}
+
+function updateCopies(v) {
+  copyCnt=parseInt(v);
+  document.getElementById('lbl-copies').textContent=copyCnt;
+  initChaos();
+}
+
+function updateParam(key,val) {
+  params[key]=parseFloat(val);
+  const fmt={length:v=>(v/100).toFixed(2)+' m',mass:v=>(v/10).toFixed(2)+' kg',
+             gravity:v=>(v/100).toFixed(2)+' m/s²',damping:v=>(v/1000).toFixed(3)};
+  document.getElementById('lbl-'+key).textContent=fmt[key](parseFloat(val));
+}
+
+function togglePlay() {
+  running=!running;
+  document.getElementById('btn-play').textContent=running?'Pause':'Play';
+  document.getElementById('btn-play').classList.toggle('active',!running);
+  if(running) lastTime=null;
+}
+
+function toggleFeat(key) {
+  features[key]=!features[key];
+  document.getElementById('tog-'+key).classList.toggle('active',features[key]);
+}
+
+function randomize() {
+  if(mode==='single'){theta1=(Math.random()*1.6-.8)*Math.PI;omega1=(Math.random()-.5)*3;}
+  else if(mode==='multi'){for(let i=0;i<numArms;i++){angles[i]=(Math.random()*1.4-.7)*Math.PI;omegas[i]=(Math.random()-.5)*4;}}
+  else{chaosBobs.forEach(p=>{p.th1=(Math.random()*1.4-.7)*Math.PI;p.th2=(Math.random()*1.4-.7)*Math.PI;p.om1=(Math.random()-.5)*4;p.om2=(Math.random()-.5)*4;p.trail=[];});}
+  clearTrails();
+}
+
+// ── Drag ─────────────────────────────────────────────────
+let dragging=false;
+function epos(e){const r=canvas.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top};}
+canvas.addEventListener('mousedown',sd); canvas.addEventListener('touchstart',sd,{passive:true});
+canvas.addEventListener('mousemove',dd); canvas.addEventListener('touchmove',dd,{passive:true});
+window.addEventListener('mouseup',()=>dragging=false); window.addEventListener('touchend',()=>dragging=false);
+
+function sd(e){
+  const pos=epos(e),pv=pivot(),L=armLen();
+  let bx,by;
+  if(mode==='single'){bx=pv.x+L*Math.sin(theta1);by=pv.y+L*Math.cos(theta1);}
+  else if(mode==='multi'){const pts=chainPos(angles,L),last=pts[pts.length-1];bx=last.x;by=last.y;}
+  else return;
+  if(Math.hypot(pos.x-bx,pos.y-by)<bobR()*3){dragging=true;clearTrails();}
+}
+function dd(e){
+  if(!dragging)return;
+  const pos=epos(e),pv=pivot();
+  const dx=pos.x-pv.x,dy=pos.y-pv.y;
+  if(mode==='single'){theta1=Math.atan2(dx,dy);omega1=0;}
+  else if(mode==='multi'){angles[0]=Math.atan2(dx,dy);omegas[0]=0;}
+}
+
+// ── Boot ─────────────────────────────────────────────────
+resize();
+resetSim();
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
