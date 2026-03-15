@@ -1,365 +1,636 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mathion</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<title>Mathion — Simulation Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root[data-theme="dark"] {
-    --bg: #090909;
-    --surface: #101010;
-    --surface-hover: #151515;
-    --border: #1c1c1c;
-    --text: #eeebe6;
-    --muted: #444;
-    --accent: #c9aa7c;
-    --accent-dim: rgba(201,170,124,0.07);
-    --accent-glow: rgba(201,170,124,0.11);
-    --toggle-bg: #131313;
-  }
-  :root[data-theme="light"] {
-    --bg: #f3f0eb;
-    --surface: #faf8f5;
-    --surface-hover: #ffffff;
-    --border: #e0dbd3;
-    --text: #1a1917;
-    --muted: #aaa49c;
-    --accent: #8c5f3c;
-    --accent-dim: rgba(140,95,60,0.06);
-    --accent-glow: rgba(140,95,60,0.1);
-    --toggle-bg: #eae6e0;
+  :root {
+    --bg:        #f2f1ee;
+    --surface:   #faf9f7;
+    --panel:     #eceae6;
+    --border:    #d8d5cf;
+    --border2:   #c4c0b8;
+    --accent:    #1a1916;
+    --accent2:   #3d3a34;
+    --muted:     #9e9a92;
+    --muted2:    #7a766e;
+    --white:     #ffffff;
+    --text:      #2e2c28;
+    --text2:     #5a5750;
+    --green:     #3a9e6e;
+    --nav-h:     52px;
   }
 
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
 
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'DM Mono', monospace;
+    font-family: 'IBM Plex Sans', sans-serif;
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    transition: background 0.3s, color 0.3s;
+    line-height: 1.6;
   }
 
-  /* HEADER */
-  header {
-    padding: 1.75rem 3rem;
+  /* ══ NAVBAR ══════════════════════════════════════════ */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--nav-h);
+    background: rgba(250,249,247,0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    background: var(--bg);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    transition: background 0.3s, border-color 0.3s;
+    z-index: 100;
+    padding: 0 28px;
+    gap: 16px;
   }
 
-  .wordmark {
+  .nav-logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-decoration: none;
+    letter-spacing: -0.01em;
     display: flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: 7px;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
-  .wordmark-name {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.45rem;
-    font-weight: 400;
-    letter-spacing: -0.025em;
-  }
-  .wordmark-pip {
-    width: 5px;
-    height: 5px;
+  .nav-logo .dot {
+    width: 6px; height: 6px;
+    background: var(--green);
     border-radius: 50%;
-    background: var(--accent);
-    margin-top: 2px;
+    box-shadow: 0 0 6px rgba(58,158,110,0.5);
+    animation: blink 2.5s ease-in-out infinite;
   }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.15} }
 
-  .theme-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--toggle-bg);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
+  .nav-divider { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+
+  .nav-tagline {
     font-size: 0.62rem;
+    color: var(--muted2);
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    padding: 0.45rem 0.9rem;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-    user-select: none;
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
-  .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* MAIN */
-  main {
+  /* Search in navbar */
+  .nav-search {
     flex: 1;
-    padding: 3.5rem 3rem 5rem;
-    max-width: 1080px;
-    width: 100%;
-    margin: 0 auto;
+    position: relative;
+    max-width: 340px;
+    margin-left: auto;
   }
-
-  .meta {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-bottom: 3rem;
-  }
-  .meta-label {
-    font-size: 0.62rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+  .nav-search-icon {
+    position: absolute;
+    left: 11px; top: 50%;
+    transform: translateY(-50%);
     color: var(--muted);
-    margin-bottom: 0.45rem;
-  }
-  .meta-heading {
-    font-family: 'DM Serif Display', serif;
-    font-size: 2.2rem;
-    font-weight: 400;
-    letter-spacing: -0.03em;
+    font-size: 0.9rem;
+    pointer-events: none;
     line-height: 1;
   }
-  .meta-count {
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
-    color: var(--muted);
+  #search {
+    width: 100%;
+    padding: 7px 30px 7px 30px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--accent);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  }
+  #search::placeholder { color: var(--muted); }
+  #search:focus {
+    background: var(--white);
+    border-color: var(--border2);
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+  }
+  .search-clear {
+    position: absolute;
+    right: 8px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    color: var(--muted); font-size: 0.8rem;
+    cursor: pointer; padding: 3px; line-height: 1;
+    display: none; transition: color 0.15s;
+  }
+  .search-clear:hover { color: var(--accent); }
+  .search-clear.visible { display: block; }
+
+  .nav-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted2);
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .nav-count strong { color: var(--accent); }
+
+  /* ══ SUBHEADER ════════════════════════════════════════ */
+  .subheader {
+    margin-top: var(--nav-h);
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--white);
+  }
+  .subheader-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .subheader-desc {
+    font-size: 0.8rem;
+    color: var(--muted2);
+    margin-top: 5px;
+    font-weight: 300;
   }
 
-  /* GRID */
+  /* ══ MAIN LAYOUT ══════════════════════════════════════ */
+  .layout {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* ══ SIDEBAR ══════════════════════════════════════════ */
+  .sidebar {
+    width: 200px;
+    min-width: 200px;
+    padding: 24px 0;
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    overflow-y: auto;
+  }
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .sidebar-section { padding: 0 14px; margin-bottom: 20px; }
+
+  .sidebar-heading {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.56rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cat-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: none; border: none;
+    padding: 6px 8px;
+    border-radius: 3px;
+    color: var(--muted2);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    text-align: left;
+    margin-bottom: 1px;
+  }
+  .cat-btn:hover { background: var(--panel); color: var(--text); }
+  .cat-btn.active { background: var(--accent); color: var(--white); font-weight: 500; }
+  .cat-btn .cat-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 8px;
+    color: var(--muted2);
+  }
+  .cat-btn.active .cat-count { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3); color: var(--white); }
+
+  /* ══ CONTENT ══════════════════════════════════════════ */
+  .content {
+    flex: 1;
+    padding: 22px 0 40px 24px;
+    min-width: 0;
+  }
+
+  .content-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .results-info {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted2);
+    letter-spacing: 0.04em;
+  }
+  .results-info strong { color: var(--accent); }
+
+  .sort-row { display: flex; gap: 4px; }
+  .sort-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted2);
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .sort-btn:hover { border-color: var(--border2); color: var(--text); background: var(--panel); }
+  .sort-btn.active { border-color: var(--accent); color: var(--white); background: var(--accent); }
+
+  /* ══ GRID ═════════════════════════════════════════════ */
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
   }
 
-  /* CARD */
   .card {
-    aspect-ratio: 1 / 1;
-    background: var(--surface);
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 1.5rem;
-    text-decoration: none;
-    color: var(--text);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    animation: fadeUp 0.35s ease both;
+  }
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.1);
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-img {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: var(--panel);
     position: relative;
     overflow: hidden;
-    transition: background 0.18s;
-    opacity: 0;
-    animation: fadeUp 0.35s ease forwards;
+    flex-shrink: 0;
   }
-  .card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--accent-glow);
-    opacity: 0;
-    transition: opacity 0.18s;
-    pointer-events: none;
+  .card-img img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
   }
-  .card:hover { background: var(--surface-hover); }
-  .card:hover::after { opacity: 1; }
+  .card:hover .card-img img { transform: scale(1.05); }
 
-  .card-icon {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.9rem;
-    color: var(--accent);
-    line-height: 1;
-    position: relative;
-    z-index: 1;
-  }
-  .card-arrow {
-    position: absolute;
-    top: 1.3rem;
-    right: 1.3rem;
-    color: var(--accent);
-    opacity: 0;
-    transform: translateX(-5px);
-    transition: opacity 0.18s, transform 0.18s;
-    z-index: 1;
-  }
-  .card:hover .card-arrow { opacity: 1; transform: translateX(0); }
-
-  .card-body { position: relative; z-index: 1; }
-  .card-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.05rem;
-    font-weight: 400;
-    letter-spacing: -0.01em;
-    margin-bottom: 0.25rem;
-    transition: color 0.18s;
-  }
-  .card:hover .card-title { color: var(--accent); }
-  .card-sub {
-    font-size: 0.6rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    line-height: 1.5;
-  }
-
-  /* EMPTY */
-  .empty {
-    grid-column: 1 / -1;
-    aspect-ratio: unset;
-    padding: 5rem 2rem;
-    text-align: center;
-    background: var(--surface);
+  .card-img-placeholder {
+    width: 100%; height: 100%;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--panel) 0%, var(--border) 100%);
+    color: var(--muted2);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    position: relative;
+    overflow: hidden;
   }
-  .empty-glyph {
-    font-family: 'DM Serif Display', serif;
-    font-size: 3rem;
-    color: var(--muted);
-    opacity: 0.3;
+  .card-img-placeholder::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
   }
-  .empty-text {
-    font-size: 0.7rem;
+  .card-img-placeholder span { position: relative; z-index: 1; }
+
+  .card-overlay {
+    position: absolute; inset: 0;
+    background: rgba(26,25,22,0.45);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .card:hover .card-overlay { opacity: 1; }
+  .play-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; color: var(--accent);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    transform: scale(0.75); transition: transform 0.2s;
+  }
+  .card:hover .play-btn { transform: scale(1); }
+
+  .card-badge {
+    position: absolute;
+    top: 8px; left: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.54rem;
+    font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--muted);
-  }
-  .empty-hint {
-    font-size: 0.62rem;
-    color: var(--muted);
-    opacity: 0.6;
-    letter-spacing: 0.05em;
+    padding: 2px 7px;
+    background: rgba(250,249,247,0.92);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text2);
+    backdrop-filter: blur(4px);
   }
 
-  /* FOOTER */
+  .card-body {
+    padding: 14px 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+  }
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1.3;
+    transition: color 0.2s;
+  }
+  .card:hover .card-title { color: var(--text); }
+
+  .card-desc {
+    font-size: 0.74rem;
+    color: var(--muted2);
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .card-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted2);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: gap 0.2s, color 0.2s;
+  }
+  .card:hover .card-link { gap: 8px; color: var(--accent); }
+
+  /* ══ EMPTY ════════════════════════════════════════════ */
+  .empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .empty-icon { font-size: 2rem; margin-bottom: 12px; opacity: 0.2; }
+  .empty-title { font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem; color: var(--muted2); margin-bottom: 6px; }
+  .empty-sub { font-size: 0.74rem; color: var(--muted); }
+
+  /* ══ FOOTER ═══════════════════════════════════════════ */
   footer {
     border-top: 1px solid var(--border);
-    padding: 1.25rem 3rem;
+    padding: 18px 28px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    transition: border-color 0.3s;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: var(--white);
   }
-  .footer-text {
-    font-size: 0.58rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--muted);
+  .footer-brand {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--accent);
   }
+  .footer-text { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; }
 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
+  /* ══ RESPONSIVE ═══════════════════════════════════════ */
+  @media (max-width: 800px) {
+    .sidebar { display: none; }
+    .content { padding: 18px 0 24px; }
+    .layout { padding: 0 14px; }
+    nav { padding: 0 16px; gap: 10px; }
+    .nav-tagline, .nav-divider { display: none; }
+    .nav-search { max-width: none; }
+    .subheader { padding: 16px; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
   }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="wordmark">
-    <span class="wordmark-name">Mathion</span>
-    <div class="wordmark-pip"></div>
-  </div>
-  <button class="theme-btn" id="themeBtn">
-    <span id="themeIcon">☀</span>
-    <span id="themeLabel">Day</span>
-  </button>
-</header>
+<!-- ══ NAVBAR ══════════════════════════════════════════ -->
+<nav>
+  <a href="#" class="nav-logo">
+    Mathion
+    <div class="dot"></div>
+  </a>
+  <div class="nav-divider"></div>
+  <span class="nav-tagline">Simulation Lab</span>
 
-<main>
-  <div class="meta">
-    <div>
-      <div class="meta-label">Index</div>
-      <div class="meta-heading">Topics</div>
+  <div class="nav-search">
+    <span class="nav-search-icon">⌕</span>
+    <input type="text" id="search" placeholder="Search simulations…" autocomplete="off" spellcheck="false">
+    <button class="search-clear" id="search-clear" title="Clear">✕</button>
+  </div>
+
+  <div class="nav-count"><strong id="nav-count">0</strong> simulations</div>
+</nav>
+
+<!-- ══ SUBHEADER ═══════════════════════════════════════ -->
+<div class="subheader">
+  <div class="subheader-title">Mathion</div>
+  <div class="subheader-desc">Interactive physics &amp; mathematics simulation laboratory</div>
+</div>
+
+<!-- ══ MAIN ═════════════════════════════════════════════ -->
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-heading">Categories</div>
+      <button class="cat-btn active" data-cat="all" onclick="filterCat('all')">
+        All <span class="cat-count" id="cnt-all">0</span>
+      </button>
+      <div id="cat-list"></div>
     </div>
-    <span class="meta-count" id="countDisplay"></span>
-  </div>
-  <div class="grid" id="grid"></div>
-</main>
+  </aside>
 
+  <main class="content">
+    <div class="content-bar">
+      <div class="results-info" id="results-info">Loading…</div>
+      <div class="sort-row">
+        <button class="sort-btn active" onclick="setSort('default', this)">Default</button>
+        <button class="sort-btn" onclick="setSort('az', this)">A – Z</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+
+</div>
+
+<!-- ══ FOOTER ══════════════════════════════════════════ -->
 <footer>
-  <span class="footer-text">Mathion</span>
-  <span class="footer-text" id="footerCount"></span>
+  <div class="footer-brand">Mathion</div>
+  <div class="footer-text">Simulations loaded from pages.json</div>
 </footer>
 
 <script>
-  /* ── Theme ── */
-  const html = document.documentElement;
-  const themeBtn = document.getElementById('themeBtn');
-  const themeIcon = document.getElementById('themeIcon');
-  const themeLabel = document.getElementById('themeLabel');
+let allSims = [], filtered = [], activecat = 'all', sortMode = 'default', query = '';
 
-  function applyTheme(t) {
-    html.dataset.theme = t;
-    themeIcon.textContent = t === 'dark' ? '☀' : '◑';
-    themeLabel.textContent = t === 'dark' ? 'Day' : 'Night';
-  }
-  applyTheme(localStorage.getItem('mathion-theme') || 'dark');
-  themeBtn.addEventListener('click', () => {
-    const next = html.dataset.theme === 'dark' ? 'light' : 'dark';
-    applyTheme(next);
-    localStorage.setItem('mathion-theme', next);
+fetch('pages.json')
+  .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+  .then(data => { allSims = data; buildCats(); applyFilters(); })
+  .catch(() => {
+    document.getElementById('grid').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">⚠</div>
+        <div class="empty-title">pages.json not found</div>
+        <div class="empty-sub">Place pages.json in the same folder as index.html</div>
+      </div>`;
+    document.getElementById('results-info').textContent = 'Error loading simulations';
   });
 
-  /* ── Render ── */
+function buildCats() {
+  const counts = {};
+  allSims.forEach(s => { const c = s.category || 'Uncategorised'; counts[c] = (counts[c]||0)+1; });
+  document.getElementById('cnt-all').textContent = allSims.length;
+  document.getElementById('nav-count').textContent = allSims.length;
+  const list = document.getElementById('cat-list');
+  list.innerHTML = '';
+  Object.entries(counts).sort().forEach(([cat, cnt]) => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn';
+    btn.dataset.cat = cat;
+    btn.innerHTML = `${cat} <span class="cat-count">${cnt}</span>`;
+    btn.onclick = () => filterCat(cat);
+    list.appendChild(btn);
+  });
+}
+
+function filterCat(cat) {
+  activecat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  applyFilters();
+}
+
+function setSort(mode, btn) {
+  sortMode = mode;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+const searchEl = document.getElementById('search');
+const clearBtn = document.getElementById('search-clear');
+searchEl.addEventListener('input', () => {
+  query = searchEl.value.trim().toLowerCase();
+  clearBtn.classList.toggle('visible', query.length > 0);
+  applyFilters();
+});
+clearBtn.addEventListener('click', () => {
+  searchEl.value = ''; query = '';
+  clearBtn.classList.remove('visible');
+  applyFilters(); searchEl.focus();
+});
+
+function applyFilters() {
+  filtered = allSims.filter(s => {
+    const matchCat = activecat === 'all' || (s.category||'Uncategorised') === activecat;
+    const matchQ   = !query || s.title.toLowerCase().includes(query)
+                            || (s.description||'').toLowerCase().includes(query)
+                            || (s.category||'').toLowerCase().includes(query);
+    return matchCat && matchQ;
+  });
+  if (sortMode === 'az') filtered = [...filtered].sort((a,b) => a.title.localeCompare(b.title));
+  renderGrid();
+  document.getElementById('results-info').innerHTML =
+    `<strong>${filtered.length}</strong> of ${allSims.length} simulation${allSims.length !== 1 ? 's' : ''}` +
+    (query ? ` matching "<strong>${searchEl.value}</strong>"` : '');
+}
+
+function renderGrid() {
   const grid = document.getElementById('grid');
-  const countDisplay = document.getElementById('countDisplay');
-  const footerCount = document.getElementById('footerCount');
-
-  function renderPages(pages) {
-    grid.innerHTML = '';
-
-    if (!Array.isArray(pages) || pages.length === 0) {
-      grid.innerHTML = `
-        <div class="empty">
-          <div class="empty-glyph">∅</div>
-          <div class="empty-text">No topics yet</div>
-          <div class="empty-hint">Add entries to pages.json to create buttons</div>
-        </div>`;
-      countDisplay.textContent = '';
-      footerCount.textContent = '0 topics';
-      return;
-    }
-
-    const n = pages.length;
-    countDisplay.textContent = n + (n === 1 ? ' topic' : ' topics');
-    footerCount.textContent = n + (n === 1 ? ' topic' : ' topics');
-
-    pages.forEach((p, i) => {
-      const a = document.createElement('a');
-      a.className = 'card';
-      a.href = p.file || '#';
-      a.style.animationDelay = (i * 0.055) + 's';
-      a.innerHTML = `
-        <div class="card-icon">${p.icon || '#'}</div>
-        <svg class="card-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M5 12h14M12 5l7 7-7 7"/>
-        </svg>
-        <div class="card-body">
-          <div class="card-title">${p.title || p.file}</div>
-          <div class="card-sub">${p.subtitle || ''}</div>
-        </div>`;
-      grid.appendChild(a);
-    });
+  grid.innerHTML = '';
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">🔭</div>
+        <div class="empty-title">No simulations found</div>
+        <div class="empty-sub">Try a different search term or category</div>
+      </div>`;
+    return;
   }
+  filtered.forEach((sim, i) => {
+    const a = document.createElement('a');
+    a.href = sim.file;
+    a.className = 'card';
+    a.style.animationDelay = (i * 0.05) + 's';
+    const label = sim.title.slice(0,2).toUpperCase();
+    const imgHTML = sim.image
+      ? `<img src="${sim.image}" alt="${sim.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=card-img-placeholder><span>${label}</span></div>'">`
+      : `<div class="card-img-placeholder"><span>${label}</span></div>`;
+    a.innerHTML = `
+      <div class="card-img">
+        ${imgHTML}
+        <div class="card-overlay"><div class="play-btn">▶</div></div>
+        ${sim.category ? `<div class="card-badge">${sim.category}</div>` : ''}
+      </div>
+      <div class="card-body">
+        <div class="card-title">${hl(sim.title)}</div>
+        <div class="card-desc">${hl(sim.description||'')}</div>
+        <div class="card-footer">
+          <span class="card-link">Open simulation →</span>
+        </div>
+      </div>`;
+    grid.appendChild(a);
+  });
+}
 
-  /* ── Fetch pages.json (works on GitHub Pages) ── */
-  fetch('pages.json')
-    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-    .then(renderPages)
-    .catch(() => {
-      grid.innerHTML = `
-        <div class="empty">
-          <div class="empty-glyph">!</div>
-          <div class="empty-text">pages.json not found</div>
-          <div class="empty-hint">Make sure pages.json is in the same folder as index.html</div>
-        </div>`;
-    });
+function hl(text) {
+  if (!query) return text;
+  const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+  return text.replace(re, '<mark style="background:rgba(0,0,0,0.08);color:var(--accent);border-radius:2px;padding:0 2px">$1</mark>');
+}
 </script>
 </body>
 </html>
