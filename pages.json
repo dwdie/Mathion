@@ -3,6 +3,13 @@
     "title": "Vectors",
     "subtitle": "Simulate vectors",
     "file": "vectors.html",
-    "icon": "→"
+    "icon": ""
+  }
+  
+  {
+    "title": "Pendulum",
+    "subtitle": "Simulate pendulums",
+    "file": "pendulum.html",
+    "icon": ""
   }
 ]
