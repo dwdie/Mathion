@@ -19,5 +19,12 @@
     "file": "spring.html",
     "image": "spring.png",
     "category": "Mechanics"
+  },
+    {
+    "title": "Projectile Motion",
+    "description": "Simulate Projectile Motion",
+    "file": "projectile.html",
+    "image": "projectile.png",
+    "category": "Mechanics"
   }
 ]
