@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>π from Polygon</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #06080f; color: #e0e0e0; font-family: monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; gap: 16px; }
+.controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; width: 100%; max-width: 620px; }
+label { font-size: 13px; color: #888; }
+input[type=range] { flex: 1; min-width: 120px; accent-color: #3de8a0; }
+#nOut { font-size: 15px; font-weight: 600; color: #fff; min-width: 36px; }
+button { font-size: 13px; padding: 5px 16px; background: transparent; border: 1px solid #3de8a0; color: #3de8a0; border-radius: 6px; cursor: pointer; }
+button:hover { background: rgba(61,232,160,0.1); }
+.cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; width: 100%; max-width: 620px; }
+.card { background: #0d1120; border-radius: 8px; padding: 12px 14px; }
+.card-label { font-size: 11px; color: #666; margin-bottom: 4px; }
+.card-val { font-size: 20px; font-weight: 600; }
+canvas { border-radius: 10px; background: #06080f; display: block; width: 100%; max-width: 620px; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <label>Sides (n)</label>
+  <input type="range" id="nSlider" min="3" max="256" value="6" step="1">
+  <span id="nOut">6</span>
+  <button onclick="animating=!animating;this.textContent=animating?'Pause':'Auto'">Auto</button>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-label">polygon perimeter / (2r)</div>
+    <div class="card-val" id="piApprox" style="color:#3de8a0;">3.000000</div>
+  </div>
+  <div class="card">
+    <div class="card-label">true π</div>
+    <div class="card-val" style="color:#6ab4ff;">3.141593</div>
+  </div>
+  <div class="card">
+    <div class="card-label">error</div>
+    <div class="card-val" id="piErr" style="color:#f87171;">4.507%</div>
+  </div>
+</div>
+
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const slider = document.getElementById('nSlider');
+const nOut = document.getElementById('nOut');
+const piApprox = document.getElementById('piApprox');
+const piErr = document.getElementById('piErr');
+
+let W, H, R, cx, cy;
+function resize() {
+  const maxW = Math.min(window.innerWidth - 40, 620);
+  canvas.style.width = maxW + 'px';
+  canvas.style.height = Math.min(maxW, 420) + 'px';
+  W = canvas.width = Math.round(maxW * devicePixelRatio);
+  H = canvas.height = Math.round(Math.min(maxW, 420) * devicePixelRatio);
+  R = Math.min(W, H) * 0.38;
+  cx = W / 2; cy = H / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+let n = 6, animating = false, animN = 3, lastTs = null, accumulator = 0;
+
+slider.addEventListener('input', () => { n = parseInt(slider.value); nOut.textContent = n; animating = false; });
+
+function draw(sides) {
+  const dpr = devicePixelRatio;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#06080f';
+  ctx.fillRect(0, 0, W, H);
+
+  // Circle fill
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(60,100,220,0.13)'; ctx.fill();
+
+  // Circle stroke — bright
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(120,160,255,0.75)'; ctx.lineWidth = 2*dpr; ctx.stroke();
+
+  const verts = [];
+  for (let i = 0; i < sides; i++) {
+    const a = (2*Math.PI*i/sides) - Math.PI/2;
+    verts.push([cx + Math.cos(a)*R, cy + Math.sin(a)*R]);
+  }
+
+  // Polygon fill
+  ctx.beginPath(); ctx.moveTo(verts[0][0], verts[0][1]);
+  for (let i = 1; i < sides; i++) ctx.lineTo(verts[i][0], verts[i][1]);
+  ctx.closePath(); ctx.fillStyle = 'rgba(80,200,160,0.10)'; ctx.fill();
+
+  // Polygon stroke
+  ctx.beginPath(); ctx.moveTo(verts[0][0], verts[0][1]);
+  for (let i = 1; i < sides; i++) ctx.lineTo(verts[i][0], verts[i][1]);
+  ctx.closePath(); ctx.strokeStyle = '#3de8a0'; ctx.lineWidth = 1.8*dpr; ctx.stroke();
+
+  // Radii
+  ctx.lineWidth = 0.5*dpr; ctx.strokeStyle = 'rgba(100,200,255,0.18)';
+  for (const [vx,vy] of verts) { ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(vx,vy); ctx.stroke(); }
+
+  // Highlighted side
+  const [ax,ay] = verts[0], [bx,by] = verts[1];
+  ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by);
+  ctx.strokeStyle = '#f9c74f'; ctx.lineWidth = 2.5*dpr; ctx.stroke();
+
+  // Center dot
+  ctx.beginPath(); ctx.arc(cx,cy,3*dpr,0,Math.PI*2); ctx.fillStyle='rgba(150,200,255,0.5)'; ctx.fill();
+
+  // Vertex dots
+  for (const [vx,vy] of verts) { ctx.beginPath(); ctx.arc(vx,vy,2.5*dpr,0,Math.PI*2); ctx.fillStyle='#3de8a0'; ctx.fill(); }
+
+  // n label only
+  ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font=`${12*dpr}px monospace`;
+  ctx.textAlign='left'; ctx.fillText(`n = ${sides}`, 14*dpr, 20*dpr);
+
+  // Progress bar
+  const approx = sides * Math.sin(Math.PI/sides);
+  const err = Math.abs(approx - Math.PI)/Math.PI*100;
+  piApprox.textContent = approx.toFixed(6);
+  piErr.textContent = err < 0.0001 ? '<0.0001%' : err.toFixed(4)+'%';
+  piErr.style.color = err < 0.01 ? '#4ade80' : err < 1 ? '#facc15' : '#f87171';
+
+  const barW=W*0.7, barX=(W-barW)/2, barY=H-22*dpr, frac=Math.min(approx/Math.PI,1);
+  ctx.fillStyle='rgba(255,255,255,0.08)'; ctx.beginPath(); ctx.roundRect(barX,barY,barW,8*dpr,4*dpr); ctx.fill();
+  ctx.fillStyle='#3de8a0'; ctx.beginPath(); ctx.roundRect(barX,barY,barW*frac,8*dpr,4*dpr); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.35)'; ctx.font=`${9*dpr}px monospace`;
+  ctx.textAlign='center'; ctx.fillText('approaching π', W/2, barY-4*dpr);
+}
+
+function loop(ts) {
+  requestAnimationFrame(loop);
+  if (animating) {
+    if (!lastTs) lastTs = ts;
+    const dt = (ts-lastTs)/1000; lastTs = ts;
+    accumulator += dt * 3.5;
+    if (accumulator >= 1) {
+      accumulator = 0;
+      animN = Math.min(animN + (animN<20?1:animN<60?3:12), 256);
+      if (animN >= 256) animN = 3;
+      slider.value = animN; n = animN; nOut.textContent = n;
+    }
+  } else { lastTs = null; }
+  draw(n);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
