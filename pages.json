@@ -26,5 +26,12 @@
     "file": "projectile.html",
     "image": "projectile.png",
     "category": "Mechanics"
-  }
+  },
+      {
+    "title": " Polygon approximation method",
+    "description": "Approximate the value of pi",
+    "file": "pi.html",
+    "image": "pi.png",
+    "category": "Mathematics"
+  
 ]
