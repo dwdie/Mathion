@@ -33,5 +33,12 @@
     "file": "pi.html",
     "image": "pi.png",
     "category": "Mathematics"
+  },
+      {
+    "title": "Sound Wave",
+    "description": "Simulate sound Wave",
+    "file": "echo.html",
+    "image": "echo.png",
+    "category": "Mechanics"
   }
 ]
