@@ -1,1 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sound Wave & Echo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  body {
+    background: #000;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+  }
+
+  h1 {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: #444;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    font-weight: 400;
+  }
+
+  canvas {
+    display: block;
+    border: 1px solid #1a1a1a;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 720px;
+  }
+
+  .legend {
+    display: flex;
+    gap: 28px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .leg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: #555;
+    text-transform: uppercase;
+  }
+
+  .leg-line {
+    width: 28px;
+    height: 1.5px;
+    border-radius: 1px;
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 28px;
+    width: 100%;
+    max-width: 720px;
+  }
+
+  .ctrl {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .ctrl label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: #444;
+    text-transform: uppercase;
+    width: 90px;
+    flex-shrink: 0;
+  }
+
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 1px;
+    background: #222;
+    outline: none;
+    border: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  input[type=range]::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    border: none;
+  }
+
+  .ctrl-val {
+    font-size: 10px;
+    color: #666;
+    width: 48px;
+    text-align: right;
+    letter-spacing: 0.05em;
+  }
+
+  select {
+    background: #000;
+    border: 1px solid #222;
+    color: #888;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 4px 8px;
+    border-radius: 2px;
+    cursor: pointer;
+    outline: none;
+    flex: 1;
+  }
+
+  select option { background: #000; }
+
+  .bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 24px;
+    width: 100%;
+    max-width: 720px;
+  }
+
+  .stats {
+    display: flex;
+    gap: 32px;
+  }
+
+  .stat-item { text-align: center; }
+  .stat-val {
+    font-size: 14px;
+    color: #fff;
+    display: block;
+    letter-spacing: 0.05em;
+  }
+  .stat-label {
+    font-size: 9px;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-top: 2px;
+    display: block;
+  }
+
+  button {
+    background: none;
+    border: 1px solid #222;
+    color: #444;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  button:hover { color: #fff; border-color: #555; }
+</style>
+</head>
+<body>
+
+<h1>Sound Wave &amp; Echo Simulation</h1>
+
+<canvas id="c"></canvas>
+
+<div class="legend">
+  <div class="leg">
+    <div class="leg-line" style="background:#4a9eff;"></div>
+    Outgoing
+  </div>
+  <div class="leg">
+    <div class="leg-line" style="background:#ff6b35; border-top: 1px dashed #ff6b35; height:0; border-bottom:none;"></div>
+    Reflected
+  </div>
+  <div class="leg">
+    <div class="leg-line" style="background:#a78bfa;"></div>
+    Combined
+  </div>
+</div>
+
+<div class="controls">
+  <div class="ctrl">
+    <label>Frequency</label>
+    <input type="range" id="freq" min="1" max="5" step="0.5" value="2">
+    <span class="ctrl-val" id="freq-out">2 Hz</span>
+  </div>
+  <div class="ctrl">
+    <label>Speed</label>
+    <input type="range" id="spd" min="0.3" max="2" step="0.1" value="1">
+    <span class="ctrl-val" id="spd-out">1.0×</span>
+  </div>
+  <div class="ctrl">
+    <label>Surface</label>
+    <select id="surface">
+      <option value="1">Concrete — 100% reflection</option>
+      <option value="0.7">Brick — 70% reflection</option>
+      <option value="0.4">Wood — 40% reflection</option>
+      <option value="0.15">Acoustic foam — 15% reflection</option>
+    </select>
+  </div>
+</div>
+
+<div class="bottom-row">
+  <div class="stats">
+    <div class="stat-item">
+      <span class="stat-val" id="delay-out">—</span>
+      <span class="stat-label">Echo delay</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-val" id="ref-out">100%</span>
+      <span class="stat-label">Reflected</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-val" id="time-out">0.0s</span>
+      <span class="stat-label">Elapsed</span>
+    </div>
+  </div>
+  <button id="pauseBtn">Pause</button>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let paused = false;
+let t = 0;
+let lastTime = null;
+let animId;
+
+const freqSlider = document.getElementById('freq');
+const spdSlider = document.getElementById('spd');
+const surfaceSel = document.getElementById('surface');
+const pauseBtn = document.getElementById('pauseBtn');
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.min(canvas.parentElement.clientWidth, 720);
+  canvas.width = w * dpr;
+  canvas.height = 260 * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = '260px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function draw(ts) {
+  if (!paused) {
+    const dt = lastTime ? Math.min((ts - lastTime) / 1000, 0.05) : 0;
+    t += dt * parseFloat(spdSlider.value);
+    lastTime = ts;
+  } else {
+    lastTime = null;
+  }
+
+  const W = canvas.width / (window.devicePixelRatio || 1);
+  const H = 260;
+  const PAD = 48;
+  const wallX = W - PAD;
+  const srcX = PAD;
+  const midY = H / 2;
+  const waveH = H * 0.30;
+  const freq = parseFloat(freqSlider.value);
+  const ref = parseFloat(surfaceSel.value);
+  const span = wallX - srcX;
+  const waveLen = span / (freq * 1.4);
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle center axis
+  ctx.beginPath();
+  ctx.strokeStyle = '#111';
+  ctx.lineWidth = 1;
+  ctx.moveTo(srcX, midY);
+  ctx.lineTo(wallX, midY);
+  ctx.stroke();
+
+  // Outgoing wave
+  function Yout(x) {
+    const ph = ((x - srcX) / waveLen - t * freq) * 2 * Math.PI;
+    return Math.sin(ph) * waveH;
+  }
+  // Reflected wave
+  function Yref(x) {
+    const d = wallX - x;
+    const ph = (d / waveLen - t * freq) * 2 * Math.PI;
+    return -Math.sin(ph) * waveH * ref;
+  }
+  // Combined
+  function Ycomb(x) { return Yout(x) + Yref(x); }
+
+  function wavePath(fn) {
+    ctx.beginPath();
+    for (let px = srcX; px <= wallX; px += 1) {
+      const y = midY + fn(px);
+      px === srcX ? ctx.moveTo(px, y) : ctx.lineTo(px, y);
+    }
+  }
+
+  // Outgoing fill (very faint)
+  wavePath(Yout);
+  ctx.lineTo(wallX, midY);
+  ctx.lineTo(srcX, midY);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(74,158,255,0.04)';
+  ctx.fill();
+
+  // Outgoing stroke
+  wavePath(Yout);
+  ctx.strokeStyle = 'rgba(74,158,255,0.85)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]);
+  ctx.stroke();
+
+  // Reflected stroke (dashed)
+  wavePath(Yref);
+  ctx.strokeStyle = 'rgba(255,107,53,0.75)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([5, 5]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Combined fill
+  wavePath(Ycomb);
+  ctx.lineTo(wallX, midY);
+  ctx.lineTo(srcX, midY);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(167,139,250,0.06)';
+  ctx.fill();
+
+  // Combined stroke
+  wavePath(Ycomb);
+  ctx.strokeStyle = 'rgba(167,139,250,0.95)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Source dot
+  const sy = midY + Yout(srcX);
+  ctx.beginPath();
+  ctx.arc(srcX, sy, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#4a9eff';
+  ctx.fill();
+
+  // Wall
+  ctx.beginPath();
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.lineWidth = 2;
+  ctx.moveTo(wallX, PAD / 2);
+  ctx.lineTo(wallX, H - PAD / 2);
+  ctx.stroke();
+
+  // Wall hatch marks
+  ctx.strokeStyle = '#1e1e1e';
+  ctx.lineWidth = 1;
+  const hCount = 14;
+  for (let i = 0; i <= hCount; i++) {
+    const hy = PAD / 2 + i * ((H - PAD) / hCount);
+    ctx.beginPath();
+    ctx.moveTo(wallX, hy);
+    ctx.lineTo(wallX + 10, hy + 8);
+    ctx.stroke();
+  }
+
+  // Tiny labels
+  ctx.font = '9px Courier New';
+  ctx.fillStyle = '#333';
+  ctx.textAlign = 'center';
+  ctx.fillText('SOURCE', srcX, H - 8);
+  ctx.fillText('WALL', wallX + 5, H - 8);
+
+  // Distance arrow
+  ctx.beginPath();
+  ctx.strokeStyle = '#1e1e1e';
+  ctx.lineWidth = 0.5;
+  ctx.moveTo(srcX + 20, H - 20);
+  ctx.lineTo(wallX - 4, H - 20);
+  ctx.stroke();
+  ctx.fillStyle = '#2a2a2a';
+  ctx.fillText('← d →', (srcX + wallX) / 2, H - 14);
+
+  // Stats
+  const d = 20;
+  const delay = Math.round(2 * d / 343 * 1000);
+  document.getElementById('delay-out').textContent = delay + ' ms';
+  document.getElementById('ref-out').textContent = Math.round(ref * 100) + '%';
+  document.getElementById('time-out').textContent = t.toFixed(1) + 's';
+
+  animId = requestAnimationFrame(draw);
+}
+
+freqSlider.oninput = () => document.getElementById('freq-out').textContent = freqSlider.value + ' Hz';
+spdSlider.oninput = () => document.getElementById('spd-out').textContent = parseFloat(spdSlider.value).toFixed(1) + '×';
+
+pauseBtn.onclick = () => {
+  paused = !paused;
+  pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+  if (!paused) { lastTime = null; requestAnimationFrame(draw); }
+};
+
+window.addEventListener('resize', resize);
+resize();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
